@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>eu.spex</groupId>
-    <artifactId>ImageSorter</artifactId>
+    <artifactId>ImageOrganizr</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -45,7 +45,7 @@
                         <id>default-cli</id>
                         <configuration>
                             <launcher>imagesort</launcher>
-                            <mainClass>eu.spex.imagesort.ImageSorter</mainClass>
+                            <mainClass>eu.spex.iorg.ImageOrganizr</mainClass>
                             <jlinkImageName>imagesort</jlinkImageName>
                             <jlinkZipName>imagesort</jlinkZipName>
                         </configuration>
@@ -56,7 +56,7 @@
                             <options>
                                 <option>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</option>
                             </options>
-                            <mainClass>eu.spex.imagesort.ImageSorter</mainClass>
+                            <mainClass>eu.spex.iorg.ImageOrganizr</mainClass>
                         </configuration>
                     </execution>
                 </executions>
@@ -75,7 +75,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>eu.spex.imagesort.ImageSorter</mainClass>
+                                    <mainClass>eu.spex.iorg.ImageOrganizr</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

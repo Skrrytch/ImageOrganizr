@@ -1,6 +1,6 @@
 module eu.spex {
     requires javafx.controls;
-    exports eu.spex.imagesort;
-    exports eu.spex.imagesort.model;
-    exports eu.spex.imagesort.voter;
+    exports eu.spex.iorg;
+    exports eu.spex.iorg.model;
+    exports eu.spex.iorg.voter;
 }
