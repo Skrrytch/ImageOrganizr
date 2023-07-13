@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>eu.spex</groupId>
     <artifactId>ImageOrganizr</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.7</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
@@ -44,10 +44,10 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <launcher>imagesort</launcher>
+                            <launcher>iorg</launcher>
                             <mainClass>eu.spex.iorg.ImageOrganizr</mainClass>
-                            <jlinkImageName>imagesort</jlinkImageName>
-                            <jlinkZipName>imagesort</jlinkZipName>
+                            <jlinkImageName>imageorganizr</jlinkImageName>
+                            <jlinkZipName>imageorganizr</jlinkZipName>
                         </configuration>
                     </execution>
                     <execution>
