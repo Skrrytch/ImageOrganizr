@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>eu.spex</groupId>
   <artifactId>ImageOrganizr</artifactId>
-  <version>0.7</version>
+  <version>0.7.0</version>
   <build>
     <plugins>
       <plugin>
@@ -23,8 +23,8 @@
             <configuration>
               <launcher>iorg</launcher>
               <mainClass>eu.spex.iorg.ImageOrganizr</mainClass>
-              <jlinkImageName>imageorganizr</jlinkImageName>
-              <jlinkZipName>imageorganizr</jlinkZipName>
+              <jlinkImageName>imageorganizr-${project.version}</jlinkImageName>
+              <jlinkZipName>imageorganizr-${project.version}</jlinkZipName>
             </configuration>
           </execution>
           <execution>
