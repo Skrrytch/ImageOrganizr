@@ -1,5 +1,7 @@
 package eu.spex.iorg;
 
+import java.util.Locale;
+
 public class SystemInfo {
 
     public static String javaVersion() {
@@ -9,5 +11,4 @@ public class SystemInfo {
     public static String javafxVersion() {
         return System.getProperty("javafx.version");
     }
-
 }

@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -76,11 +77,12 @@ public class ImageOrganizr extends Application {
 
     @Override
     public void start(Stage primaryStage) throws FileNotFoundException {
-        File directory = getDirectory();
+        initLocale();
+
+        File directory = initDirectory();
         if (directory == null) {
             return;
         }
-
         File[] files = directory.listFiles((dir, name) -> SUPPORTED_EXTENSIONS.stream().anyMatch(name::endsWith));
         if (files == null) {
             Logger.error("Failed to find directory or files: " + directory.getAbsolutePath());
@@ -151,7 +153,15 @@ public class ImageOrganizr extends Application {
         primaryStage.show();
     }
 
-    private File getDirectory() {
+    private void initLocale() {
+        Map<String, String> named = getParameters().getNamed();
+        if (named.containsKey("lang")) {
+            String languageLocale = named.get("lang");
+            I18n.setLocale(languageLocale);
+        }
+    }
+
+    private File initDirectory() {
         String directoryPath = Paths.get("").toAbsolutePath().toString();
         List<String> unnamedParams = getParameters().getUnnamed();
         if (unnamedParams.size() >= 1) {
