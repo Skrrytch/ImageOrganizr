@@ -25,12 +25,12 @@ iorg [directory] [--lang=de|en] [--mode=categorize|rate|order|simple-knockout|fu
 
 # Usage
 
-<img src="docs/screenshots/start-00.jpg"/>
+![Start Dialog](docs/screenshots/start-00.jpg?raw=true "Start Dialog")
 
-<img src="docs/screenshots/compare-00.jpg"/>
+![Order](docs/screenshots/order-00.jpg?raw=true "Order images by comparison")
 
-<img src="docs/screenshots/categorize-00.jpg"/>
+![Categorize](docs/screenshots/categorize-00.jpg?raw=true "Categorize images")
 
-<img src="docs/screenshots/rate-00.jpg"/>
+![Rate](docs/screenshots/rate-00.jpg?raw=true "Rate images")
 
-<img src="docs/screenshots/summary-00.jpg"/>
+![Summary](docs/screenshots/summary-00.jpg?raw=true "Final summary pane")
