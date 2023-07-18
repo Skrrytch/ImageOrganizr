@@ -1,5 +1,6 @@
 package eu.spex.iorg.service;
 
+import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -18,6 +19,18 @@ public class I18n {
         }
         try {
             return bundle.getString(key);
+        } catch (Exception ex) {
+            return key;
+        }
+    }
+
+    public static String translate(String key, Object... params) {
+        if (bundle == null) {
+            init();
+        }
+        try {
+            String translated = bundle.getString(key);
+            return MessageFormat.format(translated, params);
         } catch (Exception ex) {
             return key;
         }

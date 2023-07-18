@@ -9,11 +9,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import eu.spex.iorg.model.FileVoteRecord;
+import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.VoteCheck;
+import eu.spex.iorg.service.I18n;
 import eu.spex.iorg.service.Logger;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -39,6 +42,8 @@ public class VoteByRatingPanel extends VBox {
     private List<ImageView> imageViewList;
 
     private final HBox ratingStarsBox;
+
+    private Label previewTitle;
 
     public VoteByRatingPanel(int maxRating) {
         setPadding(new Insets(10));
@@ -72,6 +77,7 @@ public class VoteByRatingPanel extends VBox {
     private void fillStars() {
         fillStars(0);
     }
+
     private void fillStars(int highlightRating) {
         int rating = 1;
         for (Node starBox : ratingStarsBox.getChildren()) {
@@ -116,16 +122,16 @@ public class VoteByRatingPanel extends VBox {
             int currentRating = rating;
             child.setOnMouseClicked((e) -> {
                 if (e.getButton() == MouseButton.SECONDARY) {
-                    String ratingTag = getRatingTag(previewRating);
                     setPreviewRating(currentRating);
+                    String ratingTag = getRatingTag(previewRating);
                     VoteCheck voteCheck = voteCheckFunction.apply(ratingTag);
-                    resetPreview(voteCheck);
+                    resetPreview(voteCheck, ratingTag);
                 } else if (e.getButton() == MouseButton.PRIMARY) {
                     setSelectedRating(currentRating);
                     String ratingTag = getRatingTag(selectedRating);
                     tagConsumer.accept(ratingTag);
                     VoteCheck voteCheck = voteCheckFunction.apply(ratingTag);
-                    resetPreview(voteCheck);
+                    resetPreview(voteCheck, ratingTag);
                 }
             });
             rating++;
@@ -142,9 +148,14 @@ public class VoteByRatingPanel extends VBox {
         imageViewList.add(createNewPreviewImageView());
         imageViewList.add(createNewPreviewImageView());
         imageViewList.add(createNewPreviewImageView());
-        int columnCount = 2;
+        final int columnCount = 2;
+
+        previewTitle = new Label();
+        previewTitle.setStyle("-fx-font-weight: bold");
+        imageBox.add(previewTitle, 0, 0, columnCount, 1);
+
         int column = 0;
-        int row = 0;
+        int row = 1;
         for (ImageView imageView : imageViewList) {
             imageBox.add(imageView, column, row);
             column++;
@@ -159,15 +170,17 @@ public class VoteByRatingPanel extends VBox {
     private ImageView createNewPreviewImageView() {
         ImageView imageView = new ImageView();
         imageView.setStyle("-fx-border-width: 1;-fx-border-color: black;");
+        imageView.setPreserveRatio(true);
         imageView.setFitWidth(140);
         imageView.setFitHeight(210); // 2:3
         return imageView;
     }
 
-    private void resetPreview(VoteCheck voteCheck) {
+    private void resetPreview(VoteCheck voteCheck, String ratingTag) {
         for (ImageView imageView : imageViewList) {
             imageView.setImage(null);
         }
+        previewTitle.setText("");
         if (voteCheck == null) {
             return;
         }
@@ -189,6 +202,7 @@ public class VoteByRatingPanel extends VBox {
             previewIdx--;
             viewIdx++;
         }
+        previewTitle.setText(I18n.translate("mode."+ Mode.RATE.getParameter()+".preview.title", previewRecords.size(), ratingTag));
     }
 
 

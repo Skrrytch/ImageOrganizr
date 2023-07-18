@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import eu.spex.iorg.model.FileVoteRecord;
+import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.VoteCheck;
 import eu.spex.iorg.service.I18n;
 import eu.spex.iorg.service.Logger;
@@ -35,6 +36,8 @@ public class VoteByCategoryPanel extends VBox {
     private List<ImageView> imageViewList;
 
     private final TextField newTagInputField;
+
+    private Label previewTitle;
 
     public VoteByCategoryPanel(List<String> predefinedTags) {
 
@@ -89,9 +92,14 @@ public class VoteByCategoryPanel extends VBox {
         imageViewList.add(createNewPreviewImageView());
         imageViewList.add(createNewPreviewImageView());
         imageViewList.add(createNewPreviewImageView());
-        int columnCount = 2;
+        final int columnCount = 2;
+
+        previewTitle = new Label();
+        previewTitle.setStyle("-fx-font-weight: bold");
+        imageBox.add(previewTitle, 0, 0, columnCount, 1);
+
         int column = 0;
-        int row = 0;
+        int row = 1;
         for (ImageView imageView : imageViewList) {
             imageBox.add(imageView, column, row);
             column++;
@@ -106,15 +114,17 @@ public class VoteByCategoryPanel extends VBox {
     private ImageView createNewPreviewImageView() {
         ImageView imageView = new ImageView();
         imageView.setStyle("-fx-border-width: 1;-fx-border-color: black;");
+        imageView.setPreserveRatio(true);
         imageView.setFitWidth(140);
         imageView.setFitHeight(210); // 2:3
         return imageView;
     }
 
-    private void resetPreview(VoteCheck voteCheck) {
+    private void resetPreview(VoteCheck voteCheck, String category) {
         for (ImageView imageView : imageViewList) {
             imageView.setImage(null);
         }
+        previewTitle.setText("");
         if (voteCheck == null) {
             return;
         }
@@ -136,6 +146,7 @@ public class VoteByCategoryPanel extends VBox {
             previewIdx--;
             viewIdx++;
         }
+        previewTitle.setText(I18n.translate("mode."+ Mode.CATEGORIZE.getParameter()+".preview.title", previewRecords.size(), category));
     }
 
     private void addNewTag() {
@@ -152,11 +163,11 @@ public class VoteByCategoryPanel extends VBox {
             if (selectedTag != null) {
                 if (event.getButton() == MouseButton.SECONDARY) {
                     VoteCheck voteCheck = voteCheckFunction.apply(selectedTag);
-                    resetPreview(voteCheck);
+                    resetPreview(voteCheck, selectedTag);
                 } else if (event.getButton() == MouseButton.PRIMARY) {
                     tagConsumer.accept(selectedTag);
                     VoteCheck voteCheck = voteCheckFunction.apply(selectedTag);
-                    resetPreview(voteCheck);
+                    resetPreview(voteCheck, selectedTag);
                 }
             }
         });

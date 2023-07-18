@@ -157,6 +157,7 @@ public class SelectModeDialog extends Dialog<ButtonType> {
         HBox hbox = new HBox();
         hbox.setSpacing(10);
         hbox.getChildren().addAll(vbox, imageView);
+        HBox.setHgrow(vbox, Priority.ALWAYS);
 
         hbox.setOnMouseClicked((e) -> {
             radioButton.setSelected(true);
