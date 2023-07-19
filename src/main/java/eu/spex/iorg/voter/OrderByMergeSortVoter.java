@@ -16,7 +16,7 @@ import eu.spex.iorg.service.Logger;
 
 public class OrderByMergeSortVoter extends Voter {
 
-    private OrderByMergeSortVoteResult voteResult;
+    private final OrderByMergeSortVoteResult voteResult;
     private int size;
 
     private int glob_blockSize;

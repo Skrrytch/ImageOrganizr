@@ -65,7 +65,7 @@ public class VoteByRatingPane extends VBox implements PreviewAwarePane {
         var ratingStarsBox = new HBox(10);
         ratingStarsBox.setAlignment(Pos.CENTER);
         for (int rating = 1; rating <= maxRating; rating++) {
-            var starBox = createStar(rating);
+            var starBox = createStar();
             int ratingValue = rating;
             starBox.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> fillStars(ratingValue));
             starBox.addEventHandler(MouseEvent.MOUSE_EXITED, e -> fillStars());
@@ -94,7 +94,7 @@ public class VoteByRatingPane extends VBox implements PreviewAwarePane {
         }
     }
 
-    private Pane createStar(int starNumber) {
+    private Pane createStar() {
         SVGPath star = new SVGPath();
         star.setContent("M10 1 L14 14 L1 6 L17 6 L4 14 Z");
         star.setFill(UNSELECTED_COLOR);

@@ -23,7 +23,7 @@ public class ImagePane extends VBox {
 
     private final Label imageName;
 
-    public ImagePane(Mode mode, boolean isLeftPane) {
+    public ImagePane(Mode mode) {
         setSpacing(10);
         this.mode = mode;
 

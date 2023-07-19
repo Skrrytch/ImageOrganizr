@@ -19,7 +19,6 @@ public class FileVoteRecord {
 
     private int countOfVotings;
 
-    private double currentVoteKey = 0;
     private String finalVoting;
 
     public FileVoteRecord(String filePath, Mode mode) {
@@ -69,18 +68,6 @@ public class FileVoteRecord {
         return countOfVotes;
     }
 
-    public double getCurrentVoteKey() {
-        return currentVoteKey;
-    }
-
-    public void recalculateVoteKey() {
-        if (countOfVotes == 0) {
-            currentVoteKey = 0;
-        } else {
-            currentVoteKey = countOfVotes;
-        }
-    }
-
     public void setFinalResult(String votingValue, FileRename rename) {
         this.finalVoting = votingValue;
         this.finalFileRename = rename;
@@ -88,14 +75,6 @@ public class FileVoteRecord {
 
     public FileRename getFinalFileRename() {
         return finalFileRename;
-    }
-
-    public String getFinalNewFilePath() {
-        if (finalFileRename.getNewDirectory() != null) {
-            return finalFileRename.getNewDirectory() + "/" + finalFileRename.getNewFilename();
-        } else {
-            return finalFileRename.getNewFilename();
-        }
     }
 
     public String getFinalVoting() {

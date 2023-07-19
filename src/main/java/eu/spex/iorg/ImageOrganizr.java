@@ -15,9 +15,9 @@ import java.util.stream.Collectors;
 import eu.spex.iorg.component.dialog.ConfirmationDialog;
 import eu.spex.iorg.component.dialog.SelectModeDialog;
 import eu.spex.iorg.component.pane.FinalSummaryPane;
-import eu.spex.iorg.component.pane.ImagePane;
-import eu.spex.iorg.component.pane.HeaderPane;
 import eu.spex.iorg.component.pane.FooterPane;
+import eu.spex.iorg.component.pane.HeaderPane;
+import eu.spex.iorg.component.pane.ImagePane;
 import eu.spex.iorg.component.pane.VoteByCategoryPane;
 import eu.spex.iorg.component.pane.VoteByRatingPane;
 import eu.spex.iorg.model.FileRename;
@@ -53,12 +53,7 @@ public class ImageOrganizr extends Application {
 
     private Mode mode;
 
-    private File directory;
-
     private StackPane rootPane;
-
-    private HBox contentPane;
-    private VBox applicationPane;
 
     private ImagePane leftImagePane;
 
@@ -84,10 +79,14 @@ public class ImageOrganizr extends Application {
     public void start(Stage primaryStage) throws FileNotFoundException {
         initLocale();
 
-        directory = initDirectory();
+        File directory = initDirectory();
+        if (directory == null) {
+            Logger.error("Failed to find directory");
+            return;
+        }
         File[] files = getFilesFromDirectory(directory);
         if (files == null) {
-            Logger.error("Failed to find directory or files: " + directory.getAbsolutePath());
+            Logger.error("Failed to find files in " + directory.getAbsolutePath());
             return;
         }
 
@@ -115,14 +114,14 @@ public class ImageOrganizr extends Application {
         Pane leftPane = createLeftPane(mode);
         Pane rightPane = createRightPane(mode);
 
-        contentPane = new HBox(10);
+        HBox contentPane = new HBox(10);
         contentPane.getChildren().addAll(leftPane, rightPane);
         HBox.setHgrow(leftPane, Priority.ALWAYS);
         if (mode.isCompareMode()) {
             HBox.setHgrow(rightPane, Priority.ALWAYS);
         }
 
-        applicationPane = new VBox(10);
+        VBox applicationPane = new VBox(10);
         applicationPane.getChildren().addAll(headerPane, new Separator(), contentPane, new Separator(), footerPane);
         HBox.setHgrow(footerPane, Priority.ALWAYS);
         VBox.setVgrow(contentPane, Priority.ALWAYS);
@@ -157,8 +156,7 @@ public class ImageOrganizr extends Application {
         double screenHeight = screenBounds.getHeight();
         double windowHeight = screenHeight - 50;
         double windowWidth = Math.min(screenWidth - 50, windowHeight * 1.5);
-        Scene scene = new Scene(rootPane, windowWidth, windowHeight);
-        return scene;
+        return new Scene(rootPane, windowWidth, windowHeight);
     }
 
     private static File[] getFilesFromDirectory(File directory) {
@@ -201,26 +199,22 @@ public class ImageOrganizr extends Application {
     private FooterPane createFooterPane(Mode mode, Voter voter) {
         FooterPane toolPane = new FooterPane(mode);
         if (voter.supportsRestart()) {
-            toolPane.enableRestart((e) -> {
-                handleRestart();
-            });
+            toolPane.enableRestart((e) -> handleRestart());
         }
         if (voter.supportsUndo()) {
-            toolPane.enableUndo((e) -> {
-                handleUndo();
-            });
+            toolPane.enableUndo((e) -> handleUndo());
         }
         return toolPane;
     }
 
     private Pane createLeftPane(Mode mode) {
-        leftImagePane = new ImagePane(mode, true);
+        leftImagePane = new ImagePane(mode);
         return leftImagePane;
     }
 
     private Pane createRightPane(Mode mode) {
         if (mode.isCompareMode()) {
-            rightImagePane = new ImagePane(mode, false);
+            rightImagePane = new ImagePane(mode);
             return rightImagePane;
         } else if (mode == Mode.CATEGORIZE) {
             rightCategorizePane = new VoteByCategoryPane(List.of());
