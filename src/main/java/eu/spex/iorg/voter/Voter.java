@@ -41,4 +41,20 @@ public abstract class Voter {
     public String getDefaultVote() {
         return "1";
     }
+
+    public boolean supportsUndo() {
+        return false;
+    }
+
+    public Vote undo() {
+        return null;
+    }
+
+    public boolean supportsRestart() {
+        return false;
+    }
+
+    public Vote restart() {
+        return null;
+    }
 }

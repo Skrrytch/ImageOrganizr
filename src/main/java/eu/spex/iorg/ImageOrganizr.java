@@ -13,13 +13,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import eu.spex.iorg.component.dialog.ConfirmationDialog;
+import eu.spex.iorg.component.dialog.SelectModeDialog;
 import eu.spex.iorg.component.pane.FinalSummaryPane;
 import eu.spex.iorg.component.pane.ImagePane;
-import eu.spex.iorg.component.pane.InformationPane;
-import eu.spex.iorg.component.dialog.SelectModeDialog;
-import eu.spex.iorg.component.pane.StatusPane;
-import eu.spex.iorg.component.pane.VoteByCategoryPanel;
-import eu.spex.iorg.component.pane.VoteByRatingPanel;
+import eu.spex.iorg.component.pane.HeaderPane;
+import eu.spex.iorg.component.pane.FooterPane;
+import eu.spex.iorg.component.pane.VoteByCategoryPane;
+import eu.spex.iorg.component.pane.VoteByRatingPane;
 import eu.spex.iorg.model.FileRename;
 import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
@@ -33,13 +33,16 @@ import eu.spex.iorg.voter.TournamentVoter;
 import eu.spex.iorg.voter.Voter;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Separator;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**
@@ -50,6 +53,8 @@ public class ImageOrganizr extends Application {
 
     private Mode mode;
 
+    private File directory;
+
     private StackPane rootPane;
 
     private HBox contentPane;
@@ -59,13 +64,13 @@ public class ImageOrganizr extends Application {
 
     private ImagePane rightImagePane;
 
-    private VoteByCategoryPanel rightCategorizePane;
+    private VoteByCategoryPane rightCategorizePane;
 
-    private VoteByRatingPanel rightRatingPane;
+    private VoteByRatingPane rightRatingPane;
 
-    private InformationPane informationPane;
+    private HeaderPane headerPane;
 
-    private StatusPane statusPane;
+    private FooterPane footerPane;
 
     private Voter voter;
 
@@ -79,11 +84,8 @@ public class ImageOrganizr extends Application {
     public void start(Stage primaryStage) throws FileNotFoundException {
         initLocale();
 
-        File directory = initDirectory();
-        if (directory == null) {
-            return;
-        }
-        File[] files = directory.listFiles((dir, name) -> SUPPORTED_EXTENSIONS.stream().anyMatch(name::endsWith));
+        directory = initDirectory();
+        File[] files = getFilesFromDirectory(directory);
         if (files == null) {
             Logger.error("Failed to find directory or files: " + directory.getAbsolutePath());
             return;
@@ -97,23 +99,19 @@ public class ImageOrganizr extends Application {
         voter = switch (mode) {
             case SIMPLE_KNOCKOUT, FULL_KNOCKOUT -> new TournamentVoter(mode);
             case ORDER -> new OrderByMergeSortVoter(mode);
-            case RATE -> new CategorizeVoter(mode);
-            case CATEGORIZE -> new CategorizeVoter(mode);
+            case RATE, CATEGORIZE -> new CategorizeVoter(mode);
         };
         boolean success = voter.initCollection(Arrays.stream(files).collect(Collectors.toList()));
         if (!success) {
             System.exit(1);
         }
         currentVote = voter.getStartVote();
-        if (currentVote != null) {
-            currentVote.countVoting();
-        }
 
-        primaryStage.setTitle("iorg: "+ I18n.translate("mode."+mode.getParameter()));
+        primaryStage.setTitle("iorg: " + I18n.translate("mode." + mode.getParameter()));
         // Information Pane
 
-        createInformationPane(mode, directory.getAbsolutePath());
-        createStatusPane(mode);
+        this.headerPane = createHeaderPane(mode, directory);
+        this.footerPane = createFooterPane(mode, voter);
         Pane leftPane = createLeftPane(mode);
         Pane rightPane = createRightPane(mode);
 
@@ -125,7 +123,8 @@ public class ImageOrganizr extends Application {
         }
 
         applicationPane = new VBox(10);
-        applicationPane.getChildren().addAll(informationPane, contentPane, statusPane);
+        applicationPane.getChildren().addAll(headerPane, new Separator(), contentPane, new Separator(), footerPane);
+        HBox.setHgrow(footerPane, Priority.ALWAYS);
         VBox.setVgrow(contentPane, Priority.ALWAYS);
 
         rootPane = new StackPane();
@@ -134,11 +133,10 @@ public class ImageOrganizr extends Application {
 
         primaryStage.setOnCloseRequest(e -> System.exit(0));
 
-        primaryStage.setScene(new Scene(rootPane));
-        primaryStage.setMinWidth(750);
-        primaryStage.setMinHeight(750);
-        primaryStage.setWidth(750);
-        primaryStage.setHeight(750);
+        Scene scene = createScene(rootPane);
+        primaryStage.setScene(scene);
+        primaryStage.setMinWidth(Math.min(scene.getWidth(), 750));
+        primaryStage.setMinHeight(Math.min(scene.getHeight(), 750));
 
         primaryStage.setOnCloseRequest(event -> {
             event.consume(); // Verhindert das Standard-Schließen des Fensters
@@ -148,9 +146,26 @@ public class ImageOrganizr extends Application {
             }
         });
 
-        nextImages();
+        showCurrentVote();
 
         primaryStage.show();
+    }
+
+    private Scene createScene(StackPane rootPane) {
+        Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+        double screenWidth = screenBounds.getWidth();
+        double screenHeight = screenBounds.getHeight();
+        double windowHeight = screenHeight - 50;
+        double windowWidth = Math.min(screenWidth - 50, windowHeight * 1.5);
+        Scene scene = new Scene(rootPane, windowWidth, windowHeight);
+        return scene;
+    }
+
+    private static File[] getFilesFromDirectory(File directory) {
+        if (directory == null) {
+            return null;
+        }
+        return directory.listFiles((dir, name) -> SUPPORTED_EXTENSIONS.stream().anyMatch(name::endsWith));
     }
 
     private void initLocale() {
@@ -179,12 +194,23 @@ public class ImageOrganizr extends Application {
         return directory;
     }
 
-    private void createInformationPane(Mode mode, String directoryPath) {
-        informationPane = new InformationPane(mode, directoryPath, voter.getSize());
+    private HeaderPane createHeaderPane(Mode mode, File directory) {
+        return new HeaderPane(mode, directory, voter.getSize());
     }
 
-    private void createStatusPane(Mode mode) {
-        statusPane = new StatusPane(mode);
+    private FooterPane createFooterPane(Mode mode, Voter voter) {
+        FooterPane toolPane = new FooterPane(mode);
+        if (voter.supportsRestart()) {
+            toolPane.enableRestart((e) -> {
+                handleRestart();
+            });
+        }
+        if (voter.supportsUndo()) {
+            toolPane.enableUndo((e) -> {
+                handleUndo();
+            });
+        }
+        return toolPane;
     }
 
     private Pane createLeftPane(Mode mode) {
@@ -197,10 +223,10 @@ public class ImageOrganizr extends Application {
             rightImagePane = new ImagePane(mode, false);
             return rightImagePane;
         } else if (mode == Mode.CATEGORIZE) {
-            rightCategorizePane = new VoteByCategoryPanel(List.of());
+            rightCategorizePane = new VoteByCategoryPane(List.of());
             return rightCategorizePane;
         } else if (mode == Mode.RATE) {
-            rightRatingPane = new VoteByRatingPanel(10);
+            rightRatingPane = new VoteByRatingPane(10);
             return rightRatingPane;
         }
         return null;
@@ -224,32 +250,65 @@ public class ImageOrganizr extends Application {
         }
     }
 
-    private void handleImageSelection(FileVoteRecord record) {
-        currentVote = voter.vote(record, voter.getDefaultVote());
-        if (currentVote != null) {
-            currentVote.countVoting();
-        }
-        try {
-            nextImages();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void handleTagSelection(FileVoteRecord record, String tag) {
+    private void handleVote(FileVoteRecord record, String tag) {
         currentVote = voter.vote(record, tag);
-        if (currentVote != null) {
-            currentVote.countVoting();
-        }
         try {
-            nextImages();
+            showCurrentVote();
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
 
-    private void nextImages() throws FileNotFoundException {
+    private void handleVote(FileVoteRecord record) {
+        currentVote = voter.vote(record, voter.getDefaultVote());
+        try {
+            showCurrentVote();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void handleUndo() {
+        if (!voter.supportsUndo()) {
+            Logger.error("Voter " + voter.getClass().getSimpleName() + " does not support UNDO!");
+            return;
+        }
+        currentVote = voter.undo();
+        try {
+            showCurrentVote();
+            if (rightCategorizePane != null) {
+                rightCategorizePane.resetPreview();
+            }
+            if (rightRatingPane != null) {
+                rightRatingPane.resetPreview();
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void handleRestart() {
+        if (!voter.supportsRestart()) {
+            Logger.error("Voter " + voter.getClass().getSimpleName() + " does not support RESET!");
+            return;
+        }
+        currentVote = voter.restart();
+        try {
+            showCurrentVote();
+            if (rightCategorizePane != null) {
+                rightCategorizePane.resetPreview();
+            }
+            if (rightRatingPane != null) {
+                rightRatingPane.resetPreview();
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    private void showCurrentVote() throws FileNotFoundException {
         if (currentVote == null) {
             clearOnFinish();
             FinalSummaryPane summaryPane = new FinalSummaryPane(voter, (e) -> {
@@ -258,28 +317,28 @@ public class ImageOrganizr extends Application {
             });
             this.rootPane.getChildren().add(summaryPane);
         } else {
-            initNext(currentVote);
+            showVote(currentVote);
         }
     }
 
-    private void initNext(Vote currentVote) throws FileNotFoundException {
+    private void showVote(Vote currentVote) throws FileNotFoundException {
         FileVoteRecord record = currentVote.getRecord1();
-        leftImagePane.setRecord(record, this::handleImageSelection);
+        leftImagePane.setRecord(record, this::handleVote);
         if (mode.isCompareMode()) {
             FileVoteRecord record2 = currentVote.getRecord2();
-            rightImagePane.setRecord(record2, this::handleImageSelection);
+            rightImagePane.setRecord(record2, this::handleVote);
         } else if (mode == Mode.CATEGORIZE) {
             rightCategorizePane.setRecord(
                     record,
-                    (tag) -> this.handleTagSelection(record, tag),
+                    (tag) -> this.handleVote(record, tag),
                     (tag) -> this.previewTagSelection(record, tag));
         } else if (mode == Mode.RATE) {
             rightRatingPane.setRecord(
                     record,
-                    (tag) -> this.handleTagSelection(record, tag),
+                    (tag) -> this.handleVote(record, tag),
                     (tag) -> this.previewTagSelection(record, tag));
         }
-        statusPane.setStage(currentVote.getStageDescription());
+        footerPane.setStage(currentVote.getStageDescription());
     }
 
     private VoteCheck previewTagSelection(FileVoteRecord record, String tag) {
@@ -293,7 +352,7 @@ public class ImageOrganizr extends Application {
         } else if (mode == Mode.CATEGORIZE) {
             rightCategorizePane.clearRecord();
         }
-        statusPane.setStage("Beendet");
+        footerPane.setStage("Beendet");
         rootPane.getChildren().clear();
     }
 

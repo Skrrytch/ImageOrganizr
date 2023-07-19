@@ -34,4 +34,13 @@ public class Vote {
             file2.countVoting();
         }
     }
+
+    public void undoCountVoting() {
+        if (file1 != null) {
+            file1.undoVotingCount();
+        }
+        if (file2 != null) {
+            file2.undoVotingCount();
+        }
+    }
 }

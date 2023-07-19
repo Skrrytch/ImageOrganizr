@@ -27,7 +27,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-public class VoteByCategoryPanel extends VBox {
+public class VoteByCategoryPane extends VBox implements PreviewAwarePane {
 
     private final ObservableList<String> tags;
 
@@ -39,7 +39,7 @@ public class VoteByCategoryPanel extends VBox {
 
     private Label previewTitle;
 
-    public VoteByCategoryPanel(List<String> predefinedTags) {
+    public VoteByCategoryPane(List<String> predefinedTags) {
 
         tags = FXCollections.observableArrayList(predefinedTags);
 
@@ -75,7 +75,7 @@ public class VoteByCategoryPanel extends VBox {
 
         GridPane imagePreviewBox = createPreviewImageBox();
 
-        getChildren().addAll(imagePreviewBox, tagBox);
+        getChildren().addAll(tagBox, imagePreviewBox);
 
         VBox.setVgrow(imagePreviewBox, Priority.NEVER);
         VBox.setVgrow(tagBox, Priority.ALWAYS);
@@ -146,7 +146,7 @@ public class VoteByCategoryPanel extends VBox {
             previewIdx--;
             viewIdx++;
         }
-        previewTitle.setText(I18n.translate("mode."+ Mode.CATEGORIZE.getParameter()+".preview.title", previewRecords.size(), category));
+        previewTitle.setText(I18n.translate("mode." + Mode.CATEGORIZE.getParameter() + ".preview.title", previewRecords.size(), category));
     }
 
     private void addNewTag() {
@@ -175,5 +175,10 @@ public class VoteByCategoryPanel extends VBox {
 
     public void clearRecord() {
 
+    }
+
+    @Override
+    public void resetPreview() {
+        resetPreview(null, null);
     }
 }

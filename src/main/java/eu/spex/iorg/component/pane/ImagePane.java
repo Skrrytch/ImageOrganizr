@@ -24,6 +24,7 @@ public class ImagePane extends VBox {
     private final Label imageName;
 
     public ImagePane(Mode mode, boolean isLeftPane) {
+        setSpacing(10);
         this.mode = mode;
 
         this.imageView = new ImageView();
@@ -32,7 +33,7 @@ public class ImagePane extends VBox {
         Pane imageViewPane = new Pane();
         imageViewPane.getChildren().add(imageView);
         this.imageName = new Label();
-        getChildren().addAll(imageViewPane, imageName);
+        getChildren().addAll(imageName, imageViewPane);
         VBox.setVgrow(imageViewPane, Priority.ALWAYS);
         VBox.setVgrow(imageName, Priority.NEVER);
 

@@ -3,6 +3,8 @@ package eu.spex.iorg.model;
 import java.nio.file.Path;
 import java.util.Objects;
 
+import eu.spex.iorg.service.Logger;
+
 public class FileVoteRecord {
 
     private final Mode mode;
@@ -36,7 +38,18 @@ public class FileVoteRecord {
 
     public void countVoting() {
         this.countOfVotings++;
-        System.out.println(fileName + " counted votings: " + countOfVotings);
+        Logger.info(fileName + " voting count = " + countOfVotings);
+    }
+
+    public void resetVotingCount() {
+        this.countOfVotes = 0;
+        this.countOfVotings = 0;
+        Logger.info(fileName + " voting count reset to " + countOfVotings);
+    }
+
+    public void undoVotingCount() {
+        this.countOfVotings--;
+        Logger.info(fileName + " voting count reverted to " + countOfVotings);
     }
 
     public int getCountOfVotings() {
@@ -109,4 +122,5 @@ public class FileVoteRecord {
                 "fileName='" + fileName + '\'' +
                 '}';
     }
+
 }

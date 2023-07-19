@@ -58,7 +58,9 @@ public class TournamentVoter extends Voter {
             return null; // fertig
         }
         FileVoteRecord secondRecord = voteResult.getSecond();
-        return new Vote(voteResult.getStageDescription(), firstRecord, secondRecord);
+        Vote vote = new Vote(voteResult.getStageDescription(), firstRecord, secondRecord);
+        vote.countVoting();
+        return vote;
     }
 
     @Override

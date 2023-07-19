@@ -30,7 +30,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
 
-public class VoteByRatingPanel extends VBox {
+public class VoteByRatingPane extends VBox implements PreviewAwarePane {
 
     private static final Color HIGHLIGHT_COLOR = Color.RED;
     private static final Color PREVIEWED_COLOR = Color.ORANGE;
@@ -45,7 +45,7 @@ public class VoteByRatingPanel extends VBox {
 
     private Label previewTitle;
 
-    public VoteByRatingPanel(int maxRating) {
+    public VoteByRatingPane(int maxRating) {
         setPadding(new Insets(10));
         setSpacing(20);
 
@@ -202,11 +202,16 @@ public class VoteByRatingPanel extends VBox {
             previewIdx--;
             viewIdx++;
         }
-        previewTitle.setText(I18n.translate("mode."+ Mode.RATE.getParameter()+".preview.title", previewRecords.size(), ratingTag));
+        previewTitle.setText(I18n.translate("mode." + Mode.RATE.getParameter() + ".preview.title", previewRecords.size(), ratingTag));
     }
 
 
     private String getRatingTag(int rating) {
         return MessageFormat.format("{0,number,00}", rating);
+    }
+
+    @Override
+    public void resetPreview() {
+        resetPreview(null, null);
     }
 }

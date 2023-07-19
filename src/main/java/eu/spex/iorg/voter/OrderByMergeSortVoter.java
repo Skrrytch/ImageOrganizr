@@ -116,6 +116,7 @@ public class OrderByMergeSortVoter extends Voter {
         return getNextVote();
     }
 
+
     @Override
     public Vote getStartVote() {
         return getNextVote();
@@ -168,7 +169,7 @@ public class OrderByMergeSortVoter extends Voter {
         leftListRecord = loop2_leftList.get(idxLeft);
         rightListRecord = loop2_rightList.get(idxRight);
         Vote vote = new Vote(getStageDescription(), leftListRecord, rightListRecord);
-
+        vote.countVoting();
         return vote;
     }
 

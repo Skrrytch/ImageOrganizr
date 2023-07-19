@@ -9,6 +9,7 @@ import java.util.TreeMap;
 import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.VoteResult;
+import eu.spex.iorg.service.Logger;
 
 public class CategorizeVoteResult implements VoteResult {
 
@@ -52,6 +53,33 @@ public class CategorizeVoteResult implements VoteResult {
         }
     }
 
+    public boolean undo() {
+        if (votingElementIdx <= 1) {
+            return false;
+        }
+        votingElementIdx--; // goto current element (idx is already set to the next element!)
+        allRecords.get(votingElementIdx).undoVotingCount();
+        votingElementIdx--; // goto undo element
+        FileVoteRecord fileVoteRecord = allRecords.get(votingElementIdx);
+        fileVoteRecord.undoVotingCount();
+        boolean removed = categorizedRecords.get(fileVoteRecord.getFinalVoting()).remove(fileVoteRecord);
+        if (removed) {
+            Logger.info("Voting undone for ''{0}''", fileVoteRecord.getFileName());
+        } else {
+            Logger.warn("Failed to remove undone voting for ''{0}''", fileVoteRecord.getFileName());
+        }
+        return true;
+    }
+
+    public boolean restart() {
+        votingElementIdx = 0;
+        categorizedRecords.clear();
+        for (FileVoteRecord record : this.allRecords) {
+            record.resetVotingCount();
+        }
+        return true;
+    }
+
     public String getStageDescription() {
         return "Categorizing " + votingElementIdx + " of " + allRecords.size();
     }
@@ -66,4 +94,5 @@ public class CategorizeVoteResult implements VoteResult {
     public List<FileVoteRecord> getCategoryRecords(String category) {
         return categorizedRecords.get(category);
     }
+
 }

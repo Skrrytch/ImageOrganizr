@@ -45,6 +45,35 @@ public class CategorizeVoter extends Voter {
     }
 
     @Override
+    public boolean supportsUndo() {
+        return true;
+    }
+
+    public Vote undo() {
+        if (voteResult.undo()) {
+            return getNextVote();
+        } else {
+            Logger.warn("Undo not possible");
+            return getNextVote();
+        }
+    }
+
+    @Override
+    public boolean supportsRestart() {
+        return true;
+    }
+
+    @Override
+    public Vote restart() {
+        if (voteResult.restart()) {
+            return getNextVote();
+        } else {
+            Logger.warn("Undo not possible");
+            return getNextVote();
+        }
+    }
+
+    @Override
     public VoteCheck checkVote(FileVoteRecord record, String voteValue) {
         List<FileVoteRecord> records = voteResult.getCategoryRecords(voteValue);
         return new VoteCheck(records);
@@ -60,7 +89,9 @@ public class CategorizeVoter extends Voter {
         if (nextRecord == null) {
             return null;
         }
-        return new Vote(voteResult.getStageDescription(), nextRecord, null);
+        Vote vote = new Vote(voteResult.getStageDescription(), nextRecord, null);
+        vote.countVoting();
+        return vote;
     }
 
     @Override
@@ -93,7 +124,11 @@ public class CategorizeVoter extends Voter {
 
     @Override
     public String getDefaultVote() {
-        return "default";
+        return switch (mode) {
+            case SIMPLE_KNOCKOUT, ORDER, FULL_KNOCKOUT -> throw new IllegalStateException("Unexpected mode: " + mode);
+            case RATE -> "10";
+            case CATEGORIZE -> "default";
+        };
     }
 
 }
