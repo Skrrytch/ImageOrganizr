@@ -20,7 +20,7 @@ public class OrderByMergeSortVoteResult implements VoteResult {
 
     private OrderByMergeSortVotingState state;
 
-    private Stack<OrderByMergeSortVotingState> previousStates = new Stack<>();
+    private final Stack<OrderByMergeSortVotingState> previousStates = new Stack<>();
 
     public OrderByMergeSortVoteResult(Mode mode) {
         this.mode = mode;
