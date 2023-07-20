@@ -25,9 +25,6 @@ public class FinalSummaryPane extends BorderPane {
         TableColumn<FileVoteRecord, String> fileNameColumn = new TableColumn<>("Dateiname");
         fileNameColumn.setCellValueFactory(new PropertyValueFactory<>("fileName"));
 
-        TableColumn<FileVoteRecord, Integer> countOfVotingsColumn = new TableColumn<>("Votings");
-        countOfVotingsColumn.setCellValueFactory(new PropertyValueFactory<>("countOfVotings"));
-
         TableColumn<FileVoteRecord, String> votingColumn = new TableColumn<>("Value");
         votingColumn.setCellValueFactory(new PropertyValueFactory<>("finalVoting"));
 
@@ -35,7 +32,7 @@ public class FinalSummaryPane extends BorderPane {
         newFileNameColumn.setCellValueFactory(new PropertyValueFactory<>("finalNewFilePath"));
 
         TableView<FileVoteRecord> tableView = new TableView<>();
-        tableView.getColumns().addAll(fileNameColumn, countOfVotingsColumn, votingColumn, newFileNameColumn);
+        tableView.getColumns().addAll(fileNameColumn, votingColumn, newFileNameColumn);
         List<FileVoteRecord> fileRecordList = voter.generateFinalVoteResult();
         ObservableList<FileVoteRecord> data = FXCollections.observableArrayList(fileRecordList);
 

@@ -25,22 +25,4 @@ public class Vote {
     public FileVoteRecord getRecord2() {
         return file2;
     }
-
-    public void countVoting() {
-        if (file1 != null) {
-            file1.countVoting();
-        }
-        if (file2 != null) {
-            file2.countVoting();
-        }
-    }
-
-    public void undoCountVoting() {
-        if (file1 != null) {
-            file1.undoVotingCount();
-        }
-        if (file2 != null) {
-            file2.undoVotingCount();
-        }
-    }
 }

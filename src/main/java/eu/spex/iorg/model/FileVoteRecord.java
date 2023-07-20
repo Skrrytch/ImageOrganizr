@@ -3,7 +3,6 @@ package eu.spex.iorg.model;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import eu.spex.iorg.service.Logger;
 
 public class FileVoteRecord {
 
@@ -14,10 +13,6 @@ public class FileVoteRecord {
     private final String fileName;
 
     private FileRename finalFileRename;
-
-    private int countOfVotes;
-
-    private int countOfVotings;
 
     private String finalVoting;
 
@@ -31,30 +26,6 @@ public class FileVoteRecord {
         return mode;
     }
 
-    public void vote() {
-        this.countOfVotes++;
-    }
-
-    public void countVoting() {
-        this.countOfVotings++;
-        Logger.info(fileName + " voting count = " + countOfVotings);
-    }
-
-    public void resetVotingCount() {
-        this.countOfVotes = 0;
-        this.countOfVotings = 0;
-        Logger.info(fileName + " voting count reset to " + countOfVotings);
-    }
-
-    public void undoVotingCount() {
-        this.countOfVotings--;
-        Logger.info(fileName + " voting count reverted to " + countOfVotings);
-    }
-
-    public int getCountOfVotings() {
-        return countOfVotings;
-    }
-
     public String getFilePath() {
         return filePath;
     }
@@ -64,10 +35,6 @@ public class FileVoteRecord {
     }
 
 
-    public int getCountOfVotes() {
-        return countOfVotes;
-    }
-
     public void setFinalResult(String votingValue, FileRename rename) {
         this.finalVoting = votingValue;
         this.finalFileRename = rename;
@@ -75,6 +42,15 @@ public class FileVoteRecord {
 
     public FileRename getFinalFileRename() {
         return finalFileRename;
+    }
+
+    @SuppressWarnings("unused") // Used per reflection from JavaFX
+    public String getFinalNewFilePath() {
+        if (finalFileRename.getNewDirectory() != null) {
+            return finalFileRename.getNewDirectory() + "/" + finalFileRename.getNewFilename();
+        } else {
+            return finalFileRename.getNewFilename();
+        }
     }
 
     public String getFinalVoting() {

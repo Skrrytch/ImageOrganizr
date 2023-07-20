@@ -58,10 +58,8 @@ public class CategorizeVoteResult implements VoteResult {
             return false;
         }
         votingElementIdx--; // goto current element (idx is already set to the next element!)
-        allRecords.get(votingElementIdx).undoVotingCount();
         votingElementIdx--; // goto undo element
         FileVoteRecord fileVoteRecord = allRecords.get(votingElementIdx);
-        fileVoteRecord.undoVotingCount();
         boolean removed = categorizedRecords.get(fileVoteRecord.getFinalVoting()).remove(fileVoteRecord);
         if (removed) {
             Logger.info("Voting undone for ''{0}''", fileVoteRecord.getFileName());
@@ -74,9 +72,6 @@ public class CategorizeVoteResult implements VoteResult {
     public boolean restart() {
         votingElementIdx = 0;
         categorizedRecords.clear();
-        for (FileVoteRecord record : this.allRecords) {
-            record.resetVotingCount();
-        }
         return true;
     }
 

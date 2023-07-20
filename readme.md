@@ -15,9 +15,10 @@ The program supports different modes:
 
 Here is a small list of improvements that I plan to make. If and when these improvements will flow into the program is not yet clear.
 
-- Undo / Revert function for each step
+- Undo / Revert support for order and knockout modes
 - Configuration of renaming or movement of files
 - Support for Exif-Data (Write Rating into EXIF)
+- Enhance summary view
 
 # Parameter
 

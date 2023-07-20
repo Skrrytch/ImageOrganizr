@@ -89,9 +89,7 @@ public class CategorizeVoter extends Voter {
         if (nextRecord == null) {
             return null;
         }
-        Vote vote = new Vote(voteResult.getStageDescription(), nextRecord, null);
-        vote.countVoting();
-        return vote;
+        return new Vote(voteResult.getStageDescription(), nextRecord, null);
     }
 
     @Override
