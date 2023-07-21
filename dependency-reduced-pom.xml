@@ -3,6 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>eu.spex</groupId>
   <artifactId>ImageOrganizr</artifactId>
+  <name>ImageOrganizr</name>
   <version>0.7.2-SNAPSHOT</version>
   <build>
     <plugins>

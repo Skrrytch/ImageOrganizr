@@ -32,13 +32,16 @@ public class OrderByMergeSortVotingState {
     public List<FileVoteRecord> loop2_leftList;
     public List<FileVoteRecord> loop2_rightList;
 
-    public OrderByMergeSortVotingState(int size) {
-        this.size = size;
+    public List<FileVoteRecord> orderedRecords;
+
+    public OrderByMergeSortVotingState(List<FileVoteRecord> recordList) {
+        this.size = recordList.size();
         this.glob_blockSize = 1;
+        this.orderedRecords = new ArrayList<>(recordList);
     }
 
     public OrderByMergeSortVotingState copy() {
-        OrderByMergeSortVotingState clone = new OrderByMergeSortVotingState(size);
+        OrderByMergeSortVotingState clone = new OrderByMergeSortVotingState(this.orderedRecords);
         clone.idxLeft = idxLeft;
         clone.idxRight = idxRight;
         clone.idxList = idxList;

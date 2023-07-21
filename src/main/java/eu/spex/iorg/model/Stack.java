@@ -27,4 +27,16 @@ public class Stack<T> {
     public T peek() {
         return list.size() > 0 ? list.get(0) : null;
     }
+
+    public void clear() {
+        list.clear();
+    }
+
+    public boolean isEmpty() {
+        return list.isEmpty();
+    }
+
+    public int size() {
+        return list.size();
+    }
 }

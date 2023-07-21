@@ -4,6 +4,7 @@
     <groupId>eu.spex</groupId>
     <artifactId>ImageOrganizr</artifactId>
     <version>0.7.2-SNAPSHOT</version>
+    <name>ImageOrganizr</name>
 
     <properties>
         <maven.compiler.target>17</maven.compiler.target>

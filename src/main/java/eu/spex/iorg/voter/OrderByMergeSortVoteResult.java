@@ -16,7 +16,7 @@ public class OrderByMergeSortVoteResult implements VoteResult {
     private final Mode mode;
 
     private List<FileVoteRecord> unorderedRecords;
-    private List<FileVoteRecord> orderedRecords;
+
 
     private OrderByMergeSortVotingState state;
 
@@ -31,9 +31,9 @@ public class OrderByMergeSortVoteResult implements VoteResult {
         this.unorderedRecords = new ArrayList<>(files.stream()
                 .map(file -> new FileVoteRecord(file.getAbsolutePath(), mode))
                 .toList());
-        this.orderedRecords = new ArrayList<>(this.unorderedRecords);
 
-        this.state = new OrderByMergeSortVotingState(files.size());
+
+        this.state = new OrderByMergeSortVotingState(unorderedRecords);
     }
 
     @Override
@@ -43,22 +43,18 @@ public class OrderByMergeSortVoteResult implements VoteResult {
 
     @Override
     public List<FileVoteRecord> getOrderedRecords() {
-        return new ArrayList<>(this.orderedRecords);
+        return new ArrayList<>(state.orderedRecords);
     }
 
     public FileVoteRecord getRecord(int recordIndex) {
-        if (orderedRecords.size() <= recordIndex) {
+        if (state.orderedRecords.size() <= recordIndex) {
             return null;
         }
-        return orderedRecords.get(recordIndex);
+        return state.orderedRecords.get(recordIndex);
     }
 
     public void setRecord(int idx, FileVoteRecord fileVoteRecord) {
-        orderedRecords.set(idx, fileVoteRecord);
-    }
-
-    public void onVoted(@SuppressWarnings("unused") FileVoteRecord record) {
-        // Nothing to do
+        state.orderedRecords.set(idx, fileVoteRecord);
     }
 
     public List<FileVoteRecord> vote(FileVoteRecord record, String voteValue) {
@@ -77,7 +73,6 @@ public class OrderByMergeSortVoteResult implements VoteResult {
         } else {
             throw new IllegalArgumentException("Unexpected record.");
         }
-        onVoted(record);
         state.idxList++;
         // Finished all loops
 
@@ -162,5 +157,19 @@ public class OrderByMergeSortVoteResult implements VoteResult {
 
     public int getSize() {
         return state.size;
+    }
+
+    public boolean restart() {
+        this.state = new OrderByMergeSortVotingState(unorderedRecords);
+        this.previousStates.clear();
+        return true;
+    }
+
+    public boolean undo() {
+        if (previousStates.isEmpty()) {
+            return false;
+        }
+        this.state = previousStates.pull();
+        return true;
     }
 }

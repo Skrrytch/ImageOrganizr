@@ -11,6 +11,7 @@ import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.Vote;
 import eu.spex.iorg.model.VoteResult;
+import eu.spex.iorg.service.Logger;
 
 public class OrderByMergeSortVoter extends Voter {
 
@@ -25,11 +26,11 @@ public class OrderByMergeSortVoter extends Voter {
     @Override
     public boolean initCollection(List<File> files) {
         if (files.isEmpty()) {
-            System.out.println("Im Verzeichnis wurden keine Bilder gefunden.");
+            Logger.warn("Im Verzeichnis wurden keine Bilder gefunden.");
             return false;
         }
         if (files.size() == 1) {
-            System.out.println("Im Verzeichnis wurde nur ein Bild gefunden.");
+            Logger.warn("Im Verzeichnis wurde nur ein Bild gefunden.");
             return false;
         }
 
@@ -51,6 +52,10 @@ public class OrderByMergeSortVoter extends Voter {
 
     @Override
     public Vote getStartVote() {
+        return getNextVote();
+    }
+
+    private Vote getNextVote() {
         List<FileVoteRecord> nextVoteRecord = voteResult.getNextVote();
         if (nextVoteRecord != null) {
             return new Vote(getStageDescription(), nextVoteRecord.get(0), nextVoteRecord.get(1));
@@ -91,5 +96,35 @@ public class OrderByMergeSortVoter extends Voter {
     private String getStageDescription() {
         final String message = "{0} compared";
         return MessageFormat.format(message, voteResult.getCompareCount());
+    }
+
+    @Override
+    public boolean supportsUndo() {
+        return true;
+    }
+
+    @Override
+    public Vote undo() {
+        if (voteResult.undo()) {
+            return getNextVote();
+        } else {
+            Logger.warn("Undo not possible");
+            return getNextVote();
+        }
+    }
+
+    @Override
+    public boolean supportsRestart() {
+        return true;
+    }
+
+    @Override
+    public Vote restart() {
+        if (voteResult.restart()) {
+            return getStartVote();
+        } else {
+            Logger.warn("Undo not possible");
+            return getStartVote();
+        }
     }
 }
