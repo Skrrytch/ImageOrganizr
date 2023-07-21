@@ -57,7 +57,7 @@ public class OrderByMergeSortVoteResult implements VoteResult {
         state.orderedRecords.set(idx, fileVoteRecord);
     }
 
-    public List<FileVoteRecord> vote(FileVoteRecord record, String voteValue) {
+    public List<FileVoteRecord> vote(FileVoteRecord record, @SuppressWarnings("unused") String voteValue) {
         previousStates.push(state.copy());
 
         state.compareCount++;

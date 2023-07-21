@@ -3,6 +3,7 @@ package eu.spex.iorg.model;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class Stack<T> {
 
     private final List<T> list;
