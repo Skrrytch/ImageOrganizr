@@ -1,14 +1,16 @@
 package eu.spex.iorg.component.pane;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import eu.spex.iorg.component.dialog.ConfirmationDialog;
 import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.service.I18n;
+import eu.spex.iorg.service.ImageService;
 import eu.spex.iorg.service.Logger;
 import eu.spex.iorg.voter.Voter;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,6 +29,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 
 public class FinalSummaryPane extends BorderPane {
+
+    public Map<String, ObjectProperty> imageCache = new HashMap<>();
 
     public FinalSummaryPane(Voter voter, EventHandler<ActionEvent> actionEventEventHandler) {
 
@@ -71,10 +75,14 @@ public class FinalSummaryPane extends BorderPane {
         imageColumn.setStyle("-fx-alignment: CENTER; -fx-padding: 5 10;"); // Hier können Sie die Werte entsprechend anpassen
         imageColumn.setCellValueFactory(param -> {
             String imagePath = param.getValue().getFilePath();
+            if (imageCache.containsKey(imagePath)) {
+                return imageCache.get(imagePath);
+            }
             try {
-                InputStream stream = new FileInputStream(imagePath);
-                Image image = new Image(stream);
-                return new SimpleObjectProperty<>(image);
+                Image image = ImageService.createThumbnailInMemory(imagePath, 100, 100);
+                ObjectProperty objectProperty = new SimpleObjectProperty<>(image);
+                imageCache.put(imagePath, objectProperty);
+                return objectProperty;
             } catch (Exception ex) {
                 Logger.error(ex, "Failed to load image: {0}", imagePath);
                 return null;
