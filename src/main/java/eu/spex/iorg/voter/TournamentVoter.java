@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import eu.spex.iorg.model.FileRename;
 import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.Vote;
@@ -80,7 +79,7 @@ public class TournamentVoter extends Voter {
         while (listIdx >= 0) {
             List<FileVoteRecord> recordList = listsOfRecords.get(listIdx);
             for (FileVoteRecord record : recordList) {
-                record.setFinalResult(String.valueOf(orderNr), generateNewFilepath(record, orderNr));
+                record.setFinalResult(String.valueOf(orderNr), createPlacementRename(record, orderNr));
                 result.add(0, record); // add to the beginning for the correct order (best first)
             }
             orderNr += recordList.size();
@@ -89,7 +88,4 @@ public class TournamentVoter extends Voter {
         return result;
     }
 
-    private FileRename generateNewFilepath(FileVoteRecord voteRecord, int voteValue) {
-        return createFileRename(voteRecord, mode.getParameter() + "-" + voteValue + "-" + voteRecord.getFileName());
-    }
 }

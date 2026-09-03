@@ -4,7 +4,7 @@
   <groupId>eu.spex</groupId>
   <artifactId>ImageOrganizr</artifactId>
   <name>ImageOrganizr</name>
-  <version>0.8.1-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
   <build>
     <plugins>
       <plugin>

@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import eu.spex.iorg.model.FileRename;
 import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.Vote;
@@ -81,14 +80,10 @@ public class OrderByMergeSortVoter extends Voter {
         for (FileVoteRecord record : orderedRecords) {
             record.setFinalResult(
                     String.valueOf(orderNr),
-                    generateNewFilepath(record, orderNr));
+                    createPlacementRename(record, orderNr));
             orderNr++;
         }
         return orderedRecords;
-    }
-
-    private FileRename generateNewFilepath(FileVoteRecord voteRecord, int voteValue) {
-        return createFileRename(voteRecord, MessageFormat.format("{0,number,000}-{1}", voteValue, voteRecord.getFileName()));
     }
 
     private String getStageDescription() {

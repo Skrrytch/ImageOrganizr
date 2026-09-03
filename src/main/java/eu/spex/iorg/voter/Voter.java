@@ -1,6 +1,7 @@
 package eu.spex.iorg.voter;
 
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.List;
 
 import eu.spex.iorg.model.FileRename;
@@ -63,5 +64,14 @@ public abstract class Voter {
         FileRename fileRename = new FileRename(voteRecord.getFilePath(), voteRecord.getFileName());
         fileRename.setNewFilename(newFilename);
         return fileRename;
+    }
+
+    /**
+     * Prefixes the filename with the placement as a three-digit number, so a file manager sorts the
+     * images by their placement.
+     */
+    protected FileRename createPlacementRename(FileVoteRecord voteRecord, int placement) {
+        return createFileRename(voteRecord,
+                MessageFormat.format("{0,number,000}-{1}", placement, voteRecord.getFileName()));
     }
 }

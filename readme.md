@@ -87,7 +87,7 @@ In tournament mode, two images compete against each other. Just like in order mo
 
 Daran ändert auch der **erweiterte Turniermodus** nicht, bei dem die Platzierungen aller Bilder ausgespielt werden.
 
-**Result**: At the end all images will be renamed by prefixing their filenames with the placement as a two-digit number, whereby groups of placements can exist in simple tournament mode.
+**Result**: At the end all images will be renamed by prefixing their filenames with the placement as a three-digit number, whereby groups of placements can exist in simple tournament mode.
 
 ## Display and rename or move the result
 

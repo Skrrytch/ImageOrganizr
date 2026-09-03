@@ -41,12 +41,15 @@ public class FooterPane extends BorderPane {
 
     public void enableUndo(EventHandler<ActionEvent> actionHandler) {
         Button undoButton = new Button(I18n.translate("button.undo"));
+        // must not take focus, otherwise it swallows the voting keys
+        undoButton.setFocusTraversable(false);
         undoButton.setOnAction(actionHandler);
         rightTools.getChildren().add(undoButton);
     }
 
     public void enableRestart(EventHandler<ActionEvent> actionHandler) {
         Button restButton = new Button(I18n.translate("button.restart"));
+        restButton.setFocusTraversable(false);
         restButton.setOnAction(actionHandler);
         leftTools.getChildren().add(restButton);
     }

@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import eu.spex.iorg.component.dialog.ConfirmationDialog;
 import eu.spex.iorg.component.dialog.SelectModeDialog;
+import eu.spex.iorg.component.pane.CategoryColors;
 import eu.spex.iorg.component.pane.FinalSummaryPane;
 import eu.spex.iorg.component.pane.FooterPane;
 import eu.spex.iorg.component.pane.HeaderPane;
@@ -31,12 +32,22 @@ import eu.spex.iorg.voter.CategorizeVoter;
 import eu.spex.iorg.voter.OrderByMergeSortVoter;
 import eu.spex.iorg.voter.TournamentVoter;
 import eu.spex.iorg.voter.Voter;
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.ScaleTransition;
+import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -44,12 +55,30 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /**
  * JavaFX App
  */
 public class ImageOrganizr extends Application {
     private static final List<String> SUPPORTED_EXTENSIONS = List.of(".jpg", ".jpeg", ".png");
+
+    private static final Duration SWAP_DURATION = Duration.millis(260);
+
+    /** The left image starts moving later, so the right one clearly leads the swap. */
+    private static final Duration SWAP_STAGGER = Duration.millis(90);
+
+    /** How long the decided pair stays visible in its final order before it is faded out. */
+    private static final Duration SETTLE_HOLD = Duration.millis(90);
+
+    private static final Duration SETTLE_DURATION = Duration.millis(130);
+
+    private static final Duration APPEAR_DURATION = Duration.millis(150);
+
+    private boolean compareAnimating;
+
+    /** Shared so a category keeps the same colour in the chip bar and in the summary. */
+    private final CategoryColors categoryColors = new CategoryColors();
 
     private Mode mode;
 
@@ -114,12 +143,7 @@ public class ImageOrganizr extends Application {
         Pane leftPane = createLeftPane(mode);
         Pane rightPane = createRightPane(mode);
 
-        HBox contentPane = new HBox(10);
-        contentPane.getChildren().addAll(leftPane, rightPane);
-        HBox.setHgrow(leftPane, Priority.ALWAYS);
-        if (mode.isCompareMode()) {
-            HBox.setHgrow(rightPane, Priority.ALWAYS);
-        }
+        Pane contentPane = createContentPane(mode, leftPane, rightPane);
 
         VBox applicationPane = new VBox(10);
         applicationPane.getChildren().addAll(headerPane, new Separator(), contentPane, new Separator(), footerPane);
@@ -133,6 +157,7 @@ public class ImageOrganizr extends Application {
         primaryStage.setOnCloseRequest(e -> System.exit(0));
 
         Scene scene = createScene(rootPane);
+        initKeyboardShortcuts(scene);
         primaryStage.setScene(scene);
         primaryStage.setMinWidth(Math.min(scene.getWidth(), 750));
         primaryStage.setMinHeight(Math.min(scene.getHeight(), 750));
@@ -148,6 +173,193 @@ public class ImageOrganizr extends Application {
         showCurrentVote();
 
         primaryStage.show();
+
+        // keeps the initial focus away from the input field, so the voting keys work at once
+        rootPane.requestFocus();
+    }
+
+    private Pane createContentPane(Mode mode, Pane leftPane, Pane rightPane) {
+        if (mode.isCompareMode()) {
+            // the images are the controls here, so they only get a hint line below them
+            leftImagePane.setKeyHint("⏎");
+            rightImagePane.setKeyHint("←");
+
+            HBox imageRow = new HBox(10, leftPane, rightPane);
+            HBox.setHgrow(leftPane, Priority.ALWAYS);
+            HBox.setHgrow(rightPane, Priority.ALWAYS);
+
+            VBox contentPane = new VBox(6, imageRow, createHintLabel("mode.compare.hint"));
+            VBox.setVgrow(imageRow, Priority.ALWAYS);
+            return contentPane;
+        }
+        // rate and categorize: controls docked below, so the image gets the full window width
+        VBox contentPane = new VBox(10);
+        contentPane.getChildren().addAll(leftPane, rightPane);
+        VBox.setVgrow(leftPane, Priority.ALWAYS);
+        VBox.setVgrow(rightPane, Priority.NEVER);
+        return contentPane;
+    }
+
+    private Label createHintLabel(String key) {
+        Label hint = new Label(I18n.translate(key));
+        hint.setMaxWidth(Double.MAX_VALUE);
+        hint.setAlignment(Pos.CENTER);
+        hint.setStyle("-fx-text-fill: #808080; -fx-font-size: 11px;");
+        return hint;
+    }
+
+    private void initKeyboardShortcuts(Scene scene) {
+        scene.setOnKeyPressed(event -> {
+            switch (mode) {
+                case RATE -> handleRatingKey(event);
+                case CATEGORIZE -> handleCategoryKey(event);
+                case ORDER, SIMPLE_KNOCKOUT, FULL_KNOCKOUT -> handleCompareKey(event);
+            }
+        });
+    }
+
+    private void handleRatingKey(KeyEvent event) {
+        int rating = ratingForKey(event.getCode());
+        if (rating > 0 && rating <= rightRatingPane.getMaxRating()) {
+            rightRatingPane.selectRating(rating);
+            event.consume();
+        }
+    }
+
+    private void handleCategoryKey(KeyEvent event) {
+        if (rightCategorizePane.isTypingNewCategory()) {
+            return;
+        }
+        int position = ratingForKey(event.getCode());
+        if (position > 0 && position <= VoteByCategoryPane.MAX_HOTKEYS) {
+            rightCategorizePane.selectCategoryByPosition(position);
+            event.consume();
+        }
+    }
+
+    private void handleCompareKey(KeyEvent event) {
+        if (currentVote == null) {
+            return;
+        }
+        switch (event.getCode()) {
+            case ENTER -> {
+                keepOrderAndVote();
+                event.consume();
+            }
+            case LEFT -> {
+                swapAndVote();
+                event.consume();
+            }
+            default -> {
+            }
+        }
+    }
+
+    /**
+     * The left image already comes first: both images pulse to confirm the order stays as it is.
+     */
+    private void keepOrderAndVote() {
+        FileVoteRecord record = currentVote.getRecord1();
+        if (compareAnimating || record == null) {
+            return;
+        }
+        compareAnimating = true;
+        leftImagePane.setHighlighted(true);
+        rightImagePane.setHighlighted(true);
+
+        ParallelTransition pulse = new ParallelTransition(leftImagePane.createPulse(), rightImagePane.createPulse());
+        pulse.setOnFinished(e -> {
+            leftImagePane.setHighlighted(false);
+            rightImagePane.setHighlighted(false);
+            settleAndVote(record);
+        });
+        pulse.play();
+    }
+
+    /**
+     * The right image belongs in front: it moves over to the left first and the left image follows
+     * to the other side slightly later, so it reads as "this one moves to the front".
+     */
+    private void swapAndVote() {
+        FileVoteRecord record = currentVote.getRecord2();
+        if (compareAnimating || record == null) {
+            return;
+        }
+        compareAnimating = true;
+        double distance = rightImagePane.getBoundsInParent().getMinX() - leftImagePane.getBoundsInParent().getMinX();
+
+        TranslateTransition moveLeft = new TranslateTransition(SWAP_DURATION, rightImagePane);
+        moveLeft.setFromX(0);
+        moveLeft.setToX(-distance);
+
+        TranslateTransition moveRight = new TranslateTransition(SWAP_DURATION, leftImagePane);
+        moveRight.setFromX(0);
+        moveRight.setToX(distance);
+        moveRight.setDelay(SWAP_STAGGER);
+
+        ParallelTransition swap = new ParallelTransition(moveLeft, moveRight);
+        // the panes keep their swapped position until settleAndVote fades them out, so the chosen
+        // order is actually visible for a moment instead of snapping back
+        swap.setOnFinished(e -> settleAndVote(record));
+        swap.play();
+    }
+
+    /**
+     * Lets the pair rest briefly in its final order, fades it out and only then brings in the next
+     * pair - the pause makes clear that this comparison is settled.
+     */
+    private void settleAndVote(FileVoteRecord record) {
+        ParallelTransition settle = new ParallelTransition(
+                createSettle(leftImagePane), createSettle(rightImagePane));
+        settle.setDelay(SETTLE_HOLD);
+        settle.setOnFinished(e -> {
+            leftImagePane.setTranslateX(0);
+            rightImagePane.setTranslateX(0);
+            compareAnimating = false;
+            handleVote(record);
+            new ParallelTransition(createAppear(leftImagePane), createAppear(rightImagePane)).play();
+        });
+        settle.play();
+    }
+
+    private Animation createSettle(Node pane) {
+        FadeTransition fade = new FadeTransition(SETTLE_DURATION, pane);
+        fade.setFromValue(1);
+        fade.setToValue(0);
+        ScaleTransition shrink = new ScaleTransition(SETTLE_DURATION, pane);
+        shrink.setFromX(1);
+        shrink.setFromY(1);
+        shrink.setToX(0.96);
+        shrink.setToY(0.96);
+        return new ParallelTransition(fade, shrink);
+    }
+
+    private Animation createAppear(Node pane) {
+        FadeTransition fade = new FadeTransition(APPEAR_DURATION, pane);
+        fade.setFromValue(0);
+        fade.setToValue(1);
+        ScaleTransition grow = new ScaleTransition(APPEAR_DURATION, pane);
+        grow.setFromX(0.96);
+        grow.setFromY(0.96);
+        grow.setToX(1);
+        grow.setToY(1);
+        return new ParallelTransition(fade, grow);
+    }
+
+    private static int ratingForKey(KeyCode keyCode) {
+        return switch (keyCode) {
+            case DIGIT1, NUMPAD1 -> 1;
+            case DIGIT2, NUMPAD2 -> 2;
+            case DIGIT3, NUMPAD3 -> 3;
+            case DIGIT4, NUMPAD4 -> 4;
+            case DIGIT5, NUMPAD5 -> 5;
+            case DIGIT6, NUMPAD6 -> 6;
+            case DIGIT7, NUMPAD7 -> 7;
+            case DIGIT8, NUMPAD8 -> 8;
+            case DIGIT9, NUMPAD9 -> 9;
+            case DIGIT0, NUMPAD0 -> 10;
+            default -> 0;
+        };
     }
 
     private Scene createScene(StackPane rootPane) {
@@ -217,7 +429,7 @@ public class ImageOrganizr extends Application {
             rightImagePane = new ImagePane(mode);
             return rightImagePane;
         } else if (mode == Mode.CATEGORIZE) {
-            rightCategorizePane = new VoteByCategoryPane(List.of());
+            rightCategorizePane = new VoteByCategoryPane(List.of(), categoryColors);
             return rightCategorizePane;
         } else if (mode == Mode.RATE) {
             rightRatingPane = new VoteByRatingPane(10);
@@ -305,7 +517,7 @@ public class ImageOrganizr extends Application {
     private void showCurrentVote() throws FileNotFoundException {
         if (currentVote == null) {
             clearOnFinish();
-            FinalSummaryPane summaryPane = new FinalSummaryPane(voter, (e) -> {
+            FinalSummaryPane summaryPane = new FinalSummaryPane(voter, categoryColors, (e) -> {
                 renameAll();
                 System.exit(0);
             });
@@ -317,11 +529,14 @@ public class ImageOrganizr extends Application {
 
     private void showVote(Vote currentVote) throws FileNotFoundException {
         FileVoteRecord record = currentVote.getRecord1();
-        leftImagePane.setRecord(record, this::handleVote);
         if (mode.isCompareMode()) {
-            FileVoteRecord record2 = currentVote.getRecord2();
-            rightImagePane.setRecord(record2, this::handleVote);
-        } else if (mode == Mode.CATEGORIZE) {
+            // a click means the same as the corresponding key, so it gets the same animation
+            leftImagePane.setRecord(record, r -> keepOrderAndVote());
+            rightImagePane.setRecord(currentVote.getRecord2(), r -> swapAndVote());
+        } else {
+            leftImagePane.setRecord(record, this::handleVote);
+        }
+        if (mode == Mode.CATEGORIZE) {
             rightCategorizePane.setRecord(
                     record,
                     (tag) -> this.handleVote(record, tag),

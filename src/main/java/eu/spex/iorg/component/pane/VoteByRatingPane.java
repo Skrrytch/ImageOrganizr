@@ -1,7 +1,5 @@
 package eu.spex.iorg.component.pane;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,199 +10,190 @@ import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.VoteCheck;
 import eu.spex.iorg.service.I18n;
-import eu.spex.iorg.service.Logger;
+import javafx.animation.ParallelTransition;
+import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
+import javafx.util.Duration;
 
 public class VoteByRatingPane extends VBox implements PreviewAwarePane {
 
-    private static final Color HIGHLIGHT_COLOR = Color.RED;
-    private static final Color PREVIEWED_COLOR = Color.ORANGE;
-    private static final Color UNSELECTED_COLOR = Color.GRAY;
+    private static final Color SELECTED_COLOR = Color.web("#e53935");
+    private static final Color HOVER_COLOR = Color.web("#fb8c00");
+    private static final Color UNSELECTED_COLOR = Color.web("#bdbdbd");
 
-    private int previewRating = 0;
+    private static final int STAR_CELL_SIZE = 62;
+    private static final double STAR_SCALE = 2.6;
 
-    private int selectedRating = 0;
-    private List<ImageView> imageViewList;
+    private final int maxRating;
 
-    private final HBox ratingStarsBox;
+    private final HBox starBar;
 
-    private Label previewTitle;
+    private final List<SVGPath> stars = new ArrayList<>();
+
+    private final PreviewPopup previewPopup = new PreviewPopup();
+
+    private int selectedRating;
+
+    private int hoverRating;
+
+    private boolean voting;
+
+    private Consumer<String> tagConsumer;
+
+    private Function<String, VoteCheck> voteCheckFunction;
 
     public VoteByRatingPane(int maxRating) {
-        setPadding(new Insets(10));
-        setSpacing(20);
+        this.maxRating = maxRating;
+        this.starBar = createStarBar();
 
-        this.ratingStarsBox = createRatingStars(maxRating);
-        GridPane previewImageBox = createPreviewImageBox();
+        Label hint = new Label(I18n.translate("mode.rate.hint"));
+        hint.setStyle("-fx-text-fill: #808080; -fx-font-size: 0.9em;");
 
-        getChildren().addAll(
-                ratingStarsBox,
-                new Separator(),
-                previewImageBox);
-
-        VBox.setVgrow(ratingStarsBox, Priority.NEVER);
-        VBox.setVgrow(previewImageBox, Priority.NEVER);
+        setAlignment(Pos.CENTER);
+        setSpacing(4);
+        setPadding(new Insets(6, 10, 10, 10));
+        getChildren().addAll(starBar, hint);
     }
 
-    private HBox createRatingStars(int maxRating) {
-        var ratingStarsBox = new HBox(10);
-        ratingStarsBox.setAlignment(Pos.CENTER);
+    private HBox createStarBar() {
+        HBox bar = new HBox(6);
+        bar.setAlignment(Pos.CENTER);
         for (int rating = 1; rating <= maxRating; rating++) {
-            var starBox = createStar();
-            int ratingValue = rating;
-            starBox.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> fillStars(ratingValue));
-            starBox.addEventHandler(MouseEvent.MOUSE_EXITED, e -> fillStars());
-            ratingStarsBox.getChildren().add(starBox);
+            bar.getChildren().add(createStarCell(rating));
         }
-        return ratingStarsBox;
+        return bar;
     }
 
-    private void fillStars() {
-        fillStars(0);
-    }
-
-    private void fillStars(int highlightRating) {
-        int rating = 1;
-        for (Node starBox : ratingStarsBox.getChildren()) {
-            Pane starBoxPane = (Pane) starBox;
-            SVGPath star = (SVGPath) starBoxPane.getChildren().get(0);
-            if (highlightRating >= rating || selectedRating >= rating) {
-                star.setFill(HIGHLIGHT_COLOR);
-            } else if (previewRating >= rating) {
-                star.setFill(PREVIEWED_COLOR);
-            } else {
-                star.setFill(UNSELECTED_COLOR);
-            }
-            rating++;
-        }
-    }
-
-    private Pane createStar() {
+    private Node createStarCell(int rating) {
         SVGPath star = new SVGPath();
         star.setContent("M10 1 L14 14 L1 6 L17 6 L4 14 Z");
         star.setFill(UNSELECTED_COLOR);
-        star.setScaleX(1.75);
-        star.setScaleY(1.75);
+        star.setScaleX(STAR_SCALE);
+        star.setScaleY(STAR_SCALE);
+        stars.add(star);
 
-        return new HBox(star);
+        StackPane starBox = new StackPane(star);
+        starBox.setMinSize(STAR_CELL_SIZE, STAR_CELL_SIZE);
+        starBox.setPrefSize(STAR_CELL_SIZE, STAR_CELL_SIZE);
+        // the whole cell reacts, not just the thin star outline
+        starBox.setPickOnBounds(true);
+
+        Label hotkey = new Label(hotkeyFor(rating));
+        hotkey.setStyle("-fx-text-fill: #909090; -fx-font-size: 0.85em;");
+
+        VBox cell = new VBox(starBox, hotkey);
+        cell.setAlignment(Pos.CENTER);
+        cell.setCursor(Cursor.HAND);
+        cell.setPickOnBounds(true);
+        cell.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> setHoverRating(rating));
+        cell.addEventHandler(MouseEvent.MOUSE_EXITED, e -> setHoverRating(0));
+        cell.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.SECONDARY) {
+                showPreview(rating);
+            } else if (e.getButton() == MouseButton.PRIMARY) {
+                selectRating(rating);
+            }
+        });
+        return cell;
     }
 
-    private void setPreviewRating(int rating) {
-        previewRating = rating;
+    private String hotkeyFor(int rating) {
+        return rating == 10 ? "0" : String.valueOf(rating);
+    }
+
+    private void setHoverRating(int rating) {
+        hoverRating = rating;
         fillStars();
     }
 
-    private void setSelectedRating(int rating) {
+    private void fillStars() {
+        for (int idx = 0; idx < stars.size(); idx++) {
+            int rating = idx + 1;
+            SVGPath star = stars.get(idx);
+            if (selectedRating >= rating) {
+                star.setFill(SELECTED_COLOR);
+            } else if (hoverRating >= rating) {
+                star.setFill(HOVER_COLOR);
+            } else {
+                star.setFill(UNSELECTED_COLOR);
+            }
+        }
+    }
+
+    /**
+     * Votes for the given rating. Called by mouse click and by the keyboard shortcuts 1-9 and 0.
+     */
+    public void selectRating(int rating) {
+        if (voting || rating < 1 || rating > maxRating || tagConsumer == null) {
+            return;
+        }
+        voting = true;
         selectedRating = rating;
-        previewRating = selectedRating;
+        hoverRating = 0;
         fillStars();
+        previewPopup.hide();
+        playStarPulse(rating, () -> {
+            voting = false;
+            tagConsumer.accept(getRatingTag(rating));
+        });
+    }
+
+    /**
+     * Lights up the selected stars one after the other, so a rating chosen by keyboard is confirmed
+     * visually before the next image appears.
+     */
+    private void playStarPulse(int rating, Runnable onFinished) {
+        ParallelTransition pulse = new ParallelTransition();
+        for (int idx = 0; idx < rating; idx++) {
+            ScaleTransition scale = new ScaleTransition(Duration.millis(70), stars.get(idx));
+            scale.setFromX(STAR_SCALE);
+            scale.setFromY(STAR_SCALE);
+            scale.setToX(STAR_SCALE * 1.35);
+            scale.setToY(STAR_SCALE * 1.35);
+            scale.setAutoReverse(true);
+            scale.setCycleCount(2);
+            scale.setDelay(Duration.millis(idx * 12L));
+            pulse.getChildren().add(scale);
+        }
+        pulse.setOnFinished(e -> onFinished.run());
+        pulse.play();
+    }
+
+    public int getMaxRating() {
+        return maxRating;
     }
 
     public void setRecord(FileVoteRecord record, Consumer<String> tagConsumer, Function<String, VoteCheck> voteCheckFunction) {
-        selectedRating = 0;
-        int rating = 1;
-        for (Node child : ratingStarsBox.getChildren()) {
-            int currentRating = rating;
-            child.setOnMouseClicked((e) -> {
-                if (e.getButton() == MouseButton.SECONDARY) {
-                    setPreviewRating(currentRating);
-                    String ratingTag = getRatingTag(previewRating);
-                    VoteCheck voteCheck = voteCheckFunction.apply(ratingTag);
-                    resetPreview(voteCheck, ratingTag);
-                } else if (e.getButton() == MouseButton.PRIMARY) {
-                    setSelectedRating(currentRating);
-                    String ratingTag = getRatingTag(selectedRating);
-                    tagConsumer.accept(ratingTag);
-                    VoteCheck voteCheck = voteCheckFunction.apply(ratingTag);
-                    resetPreview(voteCheck, ratingTag);
-                }
-            });
-            rating++;
-        }
+        this.tagConsumer = tagConsumer;
+        this.voteCheckFunction = voteCheckFunction;
+        this.selectedRating = 0;
+        this.hoverRating = 0;
+        this.voting = false;
         fillStars();
     }
 
-    private GridPane createPreviewImageBox() {
-        GridPane imageBox = new GridPane();
-        imageBox.setHgap(5);
-        imageBox.setVgap(5);
-        imageViewList = new ArrayList<>();
-        imageViewList.add(createNewPreviewImageView());
-        imageViewList.add(createNewPreviewImageView());
-        imageViewList.add(createNewPreviewImageView());
-        imageViewList.add(createNewPreviewImageView());
-        final int columnCount = 2;
-
-        previewTitle = new Label();
-        previewTitle.setStyle("-fx-font-weight: bold");
-        imageBox.add(previewTitle, 0, 0, columnCount, 1);
-
-        int column = 0;
-        int row = 1;
-        for (ImageView imageView : imageViewList) {
-            imageBox.add(imageView, column, row);
-            column++;
-            if (column >= columnCount) {
-                column = 0;
-                row++;
-            }
-        }
-        return imageBox;
-    }
-
-    private ImageView createNewPreviewImageView() {
-        ImageView imageView = new ImageView();
-        imageView.setStyle("-fx-border-width: 1;-fx-border-color: black;");
-        imageView.setPreserveRatio(true);
-        imageView.setFitWidth(140);
-        imageView.setFitHeight(210); // 2:3
-        return imageView;
-    }
-
-    private void resetPreview(VoteCheck voteCheck, String ratingTag) {
-        for (ImageView imageView : imageViewList) {
-            imageView.setImage(null);
-        }
-        previewTitle.setText("");
-        if (voteCheck == null) {
+    private void showPreview(int rating) {
+        if (voteCheckFunction == null) {
             return;
         }
-        List<FileVoteRecord> previewRecords = voteCheck.getPreviewRecords();
-        if (previewRecords == null) {
-            return;
-        }
-        int previewIdx = previewRecords.size() - 1;
-        int viewIdx = 0;
-        while (previewIdx >= 0 && viewIdx < imageViewList.size()) {
-            FileVoteRecord record = previewRecords.get(previewIdx);
-            try {
-                InputStream stream = new FileInputStream(record.getFilePath());
-                Image image = new Image(stream);
-                imageViewList.get(viewIdx).setImage(image);
-            } catch (Exception ex) {
-                Logger.error(ex, "Failed to load image: " + record.getFilePath());
-            }
-            previewIdx--;
-            viewIdx++;
-        }
-        previewTitle.setText(I18n.translate("mode." + Mode.RATE.getParameter() + ".preview.title", previewRecords.size(), ratingTag));
+        String ratingTag = getRatingTag(rating);
+        VoteCheck voteCheck = voteCheckFunction.apply(ratingTag);
+        List<FileVoteRecord> previewRecords = voteCheck == null ? null : voteCheck.getPreviewRecords();
+        String title = previewRecords == null ? "" : I18n.translate(
+                "mode." + Mode.RATE.getParameter() + ".preview.title", previewRecords.size(), ratingTag);
+        previewPopup.show(starBar.getChildren().get(rating - 1), title, previewRecords);
     }
-
 
     private String getRatingTag(int rating) {
         return MessageFormat.format("{0,number,00}", rating);
@@ -212,6 +201,6 @@ public class VoteByRatingPane extends VBox implements PreviewAwarePane {
 
     @Override
     public void resetPreview() {
-        resetPreview(null, null);
+        previewPopup.hide();
     }
 }
