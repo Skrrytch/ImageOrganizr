@@ -186,7 +186,7 @@ public class ImageOrganizr extends Application {
 
         File directory = new File(directoryPath);
         if (!directory.isDirectory()) {
-            System.out.println("No valid directory: " + directoryPath);
+            Logger.warn("No valid directory: {0}", directoryPath);
             return null;
         }
         return directory;

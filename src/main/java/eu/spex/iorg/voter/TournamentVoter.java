@@ -11,6 +11,7 @@ import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.Vote;
 import eu.spex.iorg.model.VoteResult;
+import eu.spex.iorg.service.Logger;
 
 public class TournamentVoter extends Voter {
 
@@ -25,11 +26,11 @@ public class TournamentVoter extends Voter {
     @Override
     public boolean initCollection(List<File> files) {
         if (files.isEmpty()) {
-            System.out.println("Im Verzeichnis wurden keine Bilder gefunden.");
+            Logger.warn("No images in directory found.");
             return false;
         }
         if (files.size() == 1) {
-            System.out.println("Im Verzeichnis wurde nur ein Bild gefunden.");
+            Logger.warn("Only one image in directory found.");
             return false;
         }
 
@@ -89,8 +90,6 @@ public class TournamentVoter extends Voter {
     }
 
     private FileRename generateNewFilepath(FileVoteRecord voteRecord, int voteValue) {
-        FileRename fileRename = new FileRename(voteRecord.getFilePath(), voteRecord.getFileName());
-        fileRename.setNewFilename(mode.getParameter() + "-" + voteValue + "-" + voteRecord.getFileName());
-        return fileRename;
+        return createFileRename(voteRecord, mode.getParameter() + "-" + voteValue + "-" + voteRecord.getFileName());
     }
 }

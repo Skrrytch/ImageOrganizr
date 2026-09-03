@@ -88,9 +88,7 @@ public class OrderByMergeSortVoter extends Voter {
     }
 
     private FileRename generateNewFilepath(FileVoteRecord voteRecord, int voteValue) {
-        FileRename fileRename = new FileRename(voteRecord.getFilePath(), voteRecord.getFileName());
-        fileRename.setNewFilename(MessageFormat.format("{0,number,000}-{1}", voteValue, voteRecord.getFileName()));
-        return fileRename;
+        return createFileRename(voteRecord, MessageFormat.format("{0,number,000}-{1}", voteValue, voteRecord.getFileName()));
     }
 
     private String getStageDescription() {
@@ -123,7 +121,7 @@ public class OrderByMergeSortVoter extends Voter {
         if (voteResult.restart()) {
             return getStartVote();
         } else {
-            Logger.warn("Undo not possible");
+            Logger.warn("Restart not possible");
             return getStartVote();
         }
     }

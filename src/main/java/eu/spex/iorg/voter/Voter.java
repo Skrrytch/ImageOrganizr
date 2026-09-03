@@ -3,6 +3,7 @@ package eu.spex.iorg.voter;
 import java.io.File;
 import java.util.List;
 
+import eu.spex.iorg.model.FileRename;
 import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.Vote;
@@ -56,5 +57,11 @@ public abstract class Voter {
 
     public Vote restart() {
         return null;
+    }
+
+    protected FileRename createFileRename(FileVoteRecord voteRecord, String newFilename) {
+        FileRename fileRename = new FileRename(voteRecord.getFilePath(), voteRecord.getFileName());
+        fileRename.setNewFilename(newFilename);
+        return fileRename;
     }
 }

@@ -4,14 +4,14 @@
   <groupId>eu.spex</groupId>
   <artifactId>ImageOrganizr</artifactId>
   <name>ImageOrganizr</name>
-  <version>0.8.0</version>
+  <version>0.8.1-SNAPSHOT</version>
   <build>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
         <configuration>
-          <release>17</release>
+          <release>21</release>
         </configuration>
       </plugin>
       <plugin>
@@ -61,8 +61,8 @@
     </plugins>
   </build>
   <properties>
-    <maven.compiler.target>17</maven.compiler.target>
-    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 </project>

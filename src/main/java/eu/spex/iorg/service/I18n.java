@@ -2,6 +2,7 @@ package eu.spex.iorg.service;
 
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 public class I18n {
@@ -19,7 +20,7 @@ public class I18n {
         }
         try {
             return bundle.getString(key);
-        } catch (Exception ex) {
+        } catch (MissingResourceException ex) {
             return key;
         }
     }
@@ -31,16 +32,16 @@ public class I18n {
         try {
             String translated = bundle.getString(key);
             return MessageFormat.format(translated, params);
-        } catch (Exception ex) {
+        } catch (MissingResourceException ex) {
             return key;
         }
     }
 
     public static void setLocale(String languageLocale) {
         try {
-            Locale locale = new Locale(languageLocale);
+            Locale locale = Locale.of(languageLocale);
             bundle = ResourceBundle.getBundle("labels", locale);
-        } catch (Exception ex) {
+        } catch (MissingResourceException ex) {
             Logger.error("Wrong language setting: Locale '" + languageLocale + "' invalid (" + ex.getMessage() + ")");
         }
     }

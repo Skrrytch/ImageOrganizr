@@ -2,11 +2,13 @@ package eu.spex.iorg.component.pane;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.function.Consumer;
 
 import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
+import eu.spex.iorg.service.Logger;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -47,7 +49,16 @@ public class ImagePane extends VBox {
             clearRecord();
         } else {
             InputStream stream = new FileInputStream(record.getFilePath());
-            Image image = new Image(stream);
+            Image image;
+            try {
+                image = new Image(stream);
+            } finally {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    Logger.warn("Could not close image stream for {0}: {1}", record.getFilePath(), e.getMessage());
+                }
+            }
             imageName.setText(record.getFileName());
             imageView.setImage(image);
             imageView.setOnMouseClicked((e) -> eventConsumer.accept(record));

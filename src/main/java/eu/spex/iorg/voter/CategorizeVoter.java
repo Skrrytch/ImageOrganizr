@@ -68,7 +68,7 @@ public class CategorizeVoter extends Voter {
         if (voteResult.restart()) {
             return getNextVote();
         } else {
-            Logger.warn("Undo not possible");
+            Logger.warn("Restart not possible");
             return getNextVote();
         }
     }
@@ -109,14 +109,11 @@ public class CategorizeVoter extends Voter {
 
     private FileRename generateNewFilepath(FileVoteRecord voteRecord, String voteValue) {
         if (mode == Mode.CATEGORIZE) {
-            FileRename rename = new FileRename(voteRecord.getFilePath(), voteRecord.getFileName());
+            FileRename rename = createFileRename(voteRecord, voteRecord.getFileName());
             rename.setNewDirectory(voteValue);
-            rename.setNewFilename(voteRecord.getFileName());
             return rename;
         } else {
-            FileRename rename = new FileRename(voteRecord.getFilePath(), voteRecord.getFileName());
-            rename.setNewFilename(voteValue + "-" + voteRecord.getFileName());
-            return rename;
+            return createFileRename(voteRecord, voteValue + "-" + voteRecord.getFileName());
         }
     }
 
