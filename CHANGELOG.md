@@ -10,8 +10,9 @@ The first stable release - and the first one with ready-to-run packages.
 ### Added
 
 - Packages for Windows (`.msi` installer and portable `.zip`) and Linux (`.deb` and `.tar.gz`) with a bundled Java runtime - no Java installation needed.
-- A folder dialog when iorg is started without a folder that contains images, e.g. from the Start menu.
+- A folder dialog when iorg is started without a folder, e.g. from the Start menu or the application menu.
 - Keyboard shortcuts: Enter and Left arrow in the compare modes, number keys for ratings and categories.
+- Redesigned start dialog with one card per mode, showing the result and the expected number of votes.
 - Redesigned user interface with animations for the compare modes, colored category chips, a preview of the latest images per rating or category, and an image gallery in the summary.
 - Undo and restart in the order, rate and categorize modes.
 - Application icon.
@@ -20,7 +21,7 @@ The first stable release - and the first one with ready-to-run packages.
 
 - The rating is now prefixed as a two-digit number (`07-example.jpg`), so file managers sort ten stars after nine.
 - English is the default language for all systems that are neither English nor German.
-- Revised English texts in the user interface.
+- Revised English and German texts in the user interface.
 - The home folder is shown as `~` in the header on Linux.
 - Requires Java 21 and JavaFX 21 when built from source.
 

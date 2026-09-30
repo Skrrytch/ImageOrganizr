@@ -29,7 +29,7 @@ public class HeaderPane extends GridPane {
     }
 
     /** The absolute path, with the home directory shortened to "~" where that is common (not on Windows). */
-    private static String displayPath(File directory) {
+    public static String displayPath(File directory) {
         String path = directory.getAbsoluteFile().toPath().normalize().toString();
         String home = System.getProperty("user.home");
         if (File.separatorChar == '/' && home != null && (path.equals(home) || path.startsWith(home + "/"))) {

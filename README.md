@@ -50,7 +50,7 @@ macOS is not packaged yet. You can [build iorg from source](CONTRIBUTING.md#buil
 ## Quick start
 
 1. Start iorg. If the current folder has no images, it asks you to choose a folder (JPG, JPEG and PNG are supported).
-2. Pick a mode in the start dialog. It also shows how many votes to expect.
+2. Pick a mode in the start dialog - each card shows what the result looks like and how many votes to expect. Double-click a card to start right away.
 3. Vote until you are done, then check the summary.
 4. Click **Rename** to apply the result - or **Cancel** to quit without touching a single file.
 
@@ -82,8 +82,8 @@ for 100, instead of comparing every image with every other one. Still, this is t
 
 Like a tournament: images compete in pairs, the winner moves on to the next round, until one image is left.
 
-- **Simple knockout** finds the winner with the fewest votes. The other placements are only rough groups.
-- **Full knockout** keeps playing until every placement is decided.
+- **Find the winner** (simple knockout) needs the fewest votes. The other placements are only rough groups.
+- **Rank all** (full knockout) keeps playing until every placement is decided.
 
 Keep in mind that the placements after the top spots are less reliable than in *Order* mode: a good image can meet an
 even better one in the first round and end up further down than it deserves.

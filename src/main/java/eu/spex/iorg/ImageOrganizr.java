@@ -136,7 +136,7 @@ public class ImageOrganizr extends Application {
             files = getFilesFromDirectory(directory);
         }
 
-        mode = getSortMode(files);
+        mode = getSortMode(directory, files);
         if (mode == null) {
             Platform.exit();
             return;
@@ -489,7 +489,7 @@ public class ImageOrganizr extends Application {
         return null;
     }
 
-    private Mode getSortMode(File[] files) {
+    private Mode getSortMode(File directory, File[] files) {
         Parameters parameters = getParameters();
         String modeValue = parameters.getNamed().get("mode");
         if (modeValue != null) {
@@ -499,7 +499,7 @@ public class ImageOrganizr extends Application {
             }
             return mode;
         } else {
-            SelectModeDialog modeDialog = new SelectModeDialog(files.length);
+            SelectModeDialog modeDialog = new SelectModeDialog(directory, files.length);
             Optional<ButtonType> buttonType = modeDialog.showAndWait();
             return buttonType.isPresent() && buttonType.get() == SelectModeDialog.START
                     ? modeDialog.getMode()

@@ -1,217 +1,232 @@
 package eu.spex.iorg.component.dialog;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
 
+import eu.spex.iorg.component.pane.HeaderPane;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.service.I18n;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.Separator;
-import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
 
+/**
+ * The start dialog: one card per mode, the knockout card with a switch between its two variants.
+ */
 public class SelectModeDialog extends Dialog<ButtonType> {
 
-    public static final ButtonType QUIT = new ButtonType(I18n.translate("mode.select.quit"));
-    public static final ButtonType START = new ButtonType(I18n.translate("mode.select.start"));
+    public static final ButtonType QUIT = new ButtonType(I18n.translate("mode.select.quit"), ButtonBar.ButtonData.CANCEL_CLOSE);
+    public static final ButtonType START = new ButtonType(I18n.translate("mode.select.start"), ButtonBar.ButtonData.OK_DONE);
 
-    private final ToggleGroup modeSelectionGroup;
+    private static final String ACCENT = "#2c58a0";
 
-    private final Map<RadioButton, Mode> radioButtonMap;
+    private static final String CARD_STYLE = "-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-width: 2;"
+            + " -fx-cursor: hand;";
+
+    private static final String CARD_NORMAL = CARD_STYLE + " -fx-background-color: white; -fx-border-color: #e2e2e5;";
+
+    private static final String CARD_HOVER = CARD_STYLE + " -fx-background-color: white; -fx-border-color: #b8c4d9;";
+
+    private static final String CARD_SELECTED = CARD_STYLE + " -fx-background-color: #f3f7fd; -fx-border-color: " + ACCENT + ";";
 
     private final int fileCount;
-    private Label fileVotesLabel;
 
-    public SelectModeDialog(int fileCount) {
+    private final List<ModeCard> cards = new ArrayList<>();
+
+    private final ObjectProperty<ModeCard> selectedCard = new SimpleObjectProperty<>();
+
+    public SelectModeDialog(File directory, int fileCount) {
         this.fileCount = fileCount;
 
-        VBox contentBox = new VBox();
-        contentBox.setPrefWidth(700);
+        Label title = new Label(I18n.translate("mode.select.header"));
+        title.setStyle("-fx-font-size: 1.6em; -fx-font-weight: bold;");
+        Label subtitle = new Label(HeaderPane.displayPath(directory) + "  ·  " + fileCount + " " + I18n.translate("files"));
+        subtitle.setStyle("-fx-text-fill: #666666;");
+        VBox header = new VBox(4, title, subtitle);
 
-        contentBox.setPadding(new Insets(20));
-        contentBox.setSpacing(10);
+        GridPane grid = new GridPane();
+        grid.setHgap(14);
+        grid.setVgap(14);
+        for (int i = 0; i < 2; i++) {
+            ColumnConstraints column = new ColumnConstraints();
+            column.setPercentWidth(50);
+            grid.getColumnConstraints().add(column);
+            RowConstraints row = new RowConstraints();
+            row.setVgrow(Priority.ALWAYS);
+            row.setFillHeight(true);
+            grid.getRowConstraints().add(row);
+        }
+        grid.add(createCard(Mode.ORDER, "mode.order", "mode.order.description", "mode.order.example", null), 0, 0);
+        grid.add(createKnockoutCard(), 1, 0);
+        grid.add(createCard(Mode.RATE, "mode.rate", "mode.rate.description", "mode.rate.example", null), 0, 1);
+        grid.add(createCard(Mode.CATEGORIZE, "mode.categorize", "mode.categorize.description",
+                "mode.categorize.example", null), 1, 1);
 
-        VBox contantContainer = new VBox();
-        contantContainer.setPadding(new Insets(20));
-        contantContainer.setSpacing(10);
+        Label hint = new Label(I18n.translate("mode.select.hint"));
+        hint.setStyle("-fx-text-fill: #909090; -fx-font-size: 11px;");
 
-        // Create a toggle group for the radio buttons
-        modeSelectionGroup = new ToggleGroup();
-        radioButtonMap = new HashMap<>();
-
-        addTournamentModes(contantContainer);
-        addSeparator(contantContainer);
-        addMode(Mode.ORDER, contantContainer);
-        addSeparator(contantContainer);
-        addMode(Mode.CATEGORIZE, contantContainer);
-        addSeparator(contantContainer);
-        addMode(Mode.RATE, contantContainer);
-
-        modeSelectionGroup.selectedToggleProperty().addListener(
-                (observable, oldButton, newButton) -> updateSelection(newButton));
-
-        addSeparator(contantContainer);
-        addFileInfo(fileCount, contantContainer);
-
-        contentBox.getChildren().add(contantContainer);
+        VBox content = new VBox(18, header, grid, hint);
+        content.setPadding(new Insets(24, 24, 8, 24));
+        content.setPrefWidth(780);
 
         setTitle(I18n.translate("mode.select.title"));
         setHeaderText(null);
         setGraphic(null);
-        getDialogPane().setContent(contentBox);
-
+        getDialogPane().setContent(content);
+        getDialogPane().setStyle("-fx-background-color: #f5f5f7;");
         getDialogPane().getButtonTypes().addAll(QUIT, START);
+        Node startButton = getDialogPane().lookupButton(START);
+        startButton.setStyle("-fx-base: " + ACCENT + "; -fx-font-weight: bold; -fx-padding: 6 22;");
+        startButton.disableProperty().bind(selectedCard.isNull());
     }
 
-
-    private void addTournamentModes(VBox radioBox) {
-        Mode mode = Mode.SIMPLE_KNOCKOUT;
-        ImageView imageView = createModeImagePane(mode);
-
-        VBox vbox = new VBox();
-        vbox.setSpacing(5);
-
-        RadioButton radioButton1 = createRadioButton(Mode.SIMPLE_KNOCKOUT);
-        RadioButton radioButton2 = createRadioButton(Mode.FULL_KNOCKOUT);
-        String description = I18n.translate("mode.knockouts.description");
-        String renameInfo = I18n.translate("mode.knockouts.rename");
-
-        Label descriptionLabel = new Label(description);
-        descriptionLabel.setStyle("-fx-font-weight: bold;");
-        descriptionLabel.setWrapText(true);
-        descriptionLabel.setPadding(new Insets(0, 0, 0, 28));
-
-        Label renameLabel = new Label(renameInfo);
-        renameLabel.setWrapText(true);
-        renameLabel.setPadding(new Insets(0, 0, 0, 28));
-
-        vbox.getChildren().addAll(radioButton1, radioButton2, descriptionLabel, renameLabel);
-
-        HBox hbox = new HBox();
-        hbox.setSpacing(10);
-        hbox.getChildren().addAll(vbox, imageView);
-
-        hbox.setOnMouseClicked((e) -> {
-            if (!radioButton2.isSelected()) {
-                radioButton1.setSelected(true);
-            }
-            if (e.getClickCount() == 2) {
-                this.setResult(START);
-                this.close();
+    private Node createKnockoutCard() {
+        ToggleGroup variants = new ToggleGroup();
+        ToggleButton simple = createVariantButton("mode.knockout.simple", variants, "-fx-background-radius: 14 0 0 14;");
+        ToggleButton full = createVariantButton("mode.knockout.full", variants, "-fx-background-radius: 0 14 14 0;");
+        simple.setSelected(true);
+        // one variant always stays selected, like a segmented control
+        variants.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
+            if (newToggle == null) {
+                oldToggle.setSelected(true);
             }
         });
+        HBox switcher = new HBox(simple, full);
 
-        radioBox.getChildren().addAll(hbox);
+        ModeCard[] card = new ModeCard[1];
+        Supplier<Mode> mode = () -> full.isSelected() ? Mode.FULL_KNOCKOUT : Mode.SIMPLE_KNOCKOUT;
+        card[0] = createCard(mode, "mode.knockout", "mode.knockouts.description", "mode.knockouts.example", switcher);
+        variants.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> {
+            select(card[0]);
+            card[0].updateVotes();
+        });
+        return card[0];
     }
 
-
-    private ImageView createModeImagePane(Mode mode) {
-        Image image = new Image(getClass().getResourceAsStream("/mode/" + mode.getParameter() + ".png"));
-        ImageView imageView = new ImageView(image);
-        imageView.setPreserveRatio(true);
-        imageView.setFitHeight(100);
-        return imageView;
+    private static ToggleButton createVariantButton(String key, ToggleGroup group, String radius) {
+        ToggleButton button = new ToggleButton(I18n.translate(key));
+        button.setToggleGroup(group);
+        button.setFocusTraversable(false);
+        String base = radius + " -fx-font-size: 11px; -fx-padding: 4 12; -fx-cursor: hand;";
+        Runnable style = () -> button.setStyle(base + (button.isSelected()
+                ? " -fx-background-color: " + ACCENT + "; -fx-text-fill: white;"
+                : " -fx-background-color: #e6e9ef; -fx-text-fill: #333333;"));
+        button.selectedProperty().addListener((observable, oldValue, newValue) -> style.run());
+        style.run();
+        return button;
     }
 
-    private RadioButton createRadioButton(Mode mode) {
-        String name = I18n.translate("mode." + mode.getParameter());
-        RadioButton radioButton1 = new RadioButton(name);
-        radioButton1.setStyle("-fx-font-weight: bold;-fx-font-size: 1.2em");
-        radioButton1.setToggleGroup(modeSelectionGroup);
-        radioButtonMap.put(radioButton1, mode);
-        return radioButton1;
+    private ModeCard createCard(Mode mode, String titleKey, String descriptionKey, String exampleKey, Node extra) {
+        return createCard(() -> mode, titleKey, descriptionKey, exampleKey, extra);
     }
 
-
-    private void addMode(Mode mode, VBox container) {
-        ImageView imageView = createModeImagePane(mode);
-
-        VBox vbox = new VBox();
-        vbox.setSpacing(5);
-
-        RadioButton radioButton = createRadioButton(mode);
-        String description = I18n.translate("mode." + mode.getParameter() + ".description");
-        String renameInfo = I18n.translate("mode." + mode.getParameter() + ".rename");
-
-        Label descriptionLabel = new Label(description);
-        descriptionLabel.setStyle("-fx-font-weight: bold;");
-        descriptionLabel.setWrapText(true);
-        descriptionLabel.setPadding(new Insets(0, 0, 0, 28));
-
-        Label renameLabel = new Label(renameInfo);
-        renameLabel.setWrapText(true);
-        renameLabel.setPadding(new Insets(0, 0, 0, 28));
-
-        vbox.getChildren().addAll(radioButton, descriptionLabel, renameLabel);
-
-        HBox hbox = new HBox();
-        hbox.setSpacing(10);
-        hbox.getChildren().addAll(vbox, imageView);
-        HBox.setHgrow(vbox, Priority.ALWAYS);
-
-        hbox.setOnMouseClicked((e) -> {
-            radioButton.setSelected(true);
+    private ModeCard createCard(Supplier<Mode> mode, String titleKey, String descriptionKey, String exampleKey,
+                                Node extra) {
+        ModeCard card = new ModeCard(mode, titleKey, descriptionKey, exampleKey, extra);
+        card.setOnMouseEntered(e -> card.setStyle(selectedCard.get() == card ? CARD_SELECTED : CARD_HOVER));
+        card.setOnMouseExited(e -> card.setStyle(selectedCard.get() == card ? CARD_SELECTED : CARD_NORMAL));
+        card.setOnMouseClicked(e -> {
+            select(card);
             if (e.getClickCount() == 2) {
-                this.setResult(START);
-                this.close();
+                setResult(START);
+                close();
             }
         });
-
-        container.getChildren().addAll(hbox);
+        cards.add(card);
+        return card;
     }
 
-
-    private void updateSelection(Toggle newButton) {
-        Mode mode = getMode(newButton);
-        if (mode != null) {
-            int estimatedComparisons = switch (mode) {
-                case SIMPLE_KNOCKOUT -> (fileCount % 2 == 0) ? fileCount - 1 : fileCount + 1;
-                case FULL_KNOCKOUT -> (int) (fileCount * (fileCount - 1) / 2.0);
-                case ORDER -> (int) (fileCount * Math.log(fileCount));
-                case RATE -> fileCount;
-                case CATEGORIZE -> fileCount;
-            };
-            this.fileVotesLabel.setText(estimatedComparisons + " " + I18n.translate("estimated.votings"));
-        }
+    private void select(ModeCard card) {
+        selectedCard.set(card);
+        cards.forEach(c -> c.setStyle(c == card ? CARD_SELECTED : CARD_NORMAL));
     }
 
-
-    private void addFileInfo(int fileCount, VBox container) {
-        Label fileCountLabel = new Label();
-        fileCountLabel.setText(fileCount + " " + I18n.translate("files"));
-
-        fileVotesLabel = new Label();
-        HBox box = new HBox(fileCountLabel, fileVotesLabel);
-        box.setSpacing(20);
-        HBox.setHgrow(box, Priority.ALWAYS);
-        HBox.setHgrow(fileCountLabel, Priority.ALWAYS);
-        HBox.setHgrow(fileVotesLabel, Priority.ALWAYS);
-        fileCountLabel.setAlignment(Pos.CENTER_LEFT);
-        fileVotesLabel.setAlignment(Pos.CENTER_RIGHT);
-
-        container.getChildren().add(box);
-    }
-
-    private void addSeparator(VBox radioBox) {
-        radioBox.getChildren().add(new Separator());
-    }
-
-    public Mode getMode(Toggle toggle) {
-        return radioButtonMap.get(toggle);
+    /** A rough estimate of the number of votes, so the user can judge the effort of a mode. */
+    private int estimateVotes(Mode mode) {
+        return switch (mode) {
+            case SIMPLE_KNOCKOUT -> (fileCount % 2 == 0) ? fileCount - 1 : fileCount + 1;
+            case FULL_KNOCKOUT -> (int) (fileCount * (fileCount - 1) / 2.0);
+            case ORDER -> (int) (fileCount * Math.log(fileCount));
+            case RATE, CATEGORIZE -> fileCount;
+        };
     }
 
     public Mode getMode() {
-        Toggle selectedToggle = modeSelectionGroup.getSelectedToggle();
-        return getMode(selectedToggle);
+        ModeCard card = selectedCard.get();
+        return card == null ? null : card.mode.get();
+    }
+
+    private class ModeCard extends VBox {
+
+        private final Supplier<Mode> mode;
+
+        private final Label votes = new Label();
+
+        ModeCard(Supplier<Mode> mode, String titleKey, String descriptionKey, String exampleKey, Node extra) {
+            this.mode = mode;
+
+            ImageView image = new ImageView(new Image(getClass().getResourceAsStream(
+                    "/mode/" + mode.get().getParameter() + ".png")));
+            image.setPreserveRatio(true);
+            image.setFitWidth(64);
+            image.setFitHeight(64);
+            image.setSmooth(true);
+
+            Label title = new Label(I18n.translate(titleKey));
+            title.setStyle("-fx-font-size: 1.25em; -fx-font-weight: bold;");
+            Label description = new Label(I18n.translate(descriptionKey));
+            description.setWrapText(true);
+            description.setStyle("-fx-text-fill: #444444;");
+            description.setMinHeight(Region.USE_PREF_SIZE);
+
+            VBox text = new VBox(6, title, description);
+            if (extra != null) {
+                text.getChildren().add(extra);
+            }
+            HBox.setHgrow(text, Priority.ALWAYS);
+            HBox top = new HBox(14, image, text);
+            top.setAlignment(Pos.TOP_LEFT);
+
+            Label example = new Label(I18n.translate(exampleKey));
+            example.setStyle("-fx-font-family: monospace; -fx-font-size: 11px; -fx-text-fill: #555555;"
+                    + " -fx-background-color: #eef1f6; -fx-background-radius: 4; -fx-padding: 2 6;");
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            votes.setStyle("-fx-text-fill: #666666; -fx-font-size: 11px;");
+            HBox bottom = new HBox(8, example, spacer, votes);
+            bottom.setAlignment(Pos.CENTER_LEFT);
+
+            Region fill = new Region();
+            VBox.setVgrow(fill, Priority.ALWAYS);
+            getChildren().addAll(top, fill, bottom);
+            setSpacing(12);
+            setPadding(new Insets(16));
+            setMaxHeight(Double.MAX_VALUE);
+            setStyle(CARD_NORMAL);
+            updateVotes();
+        }
+
+        void updateVotes() {
+            votes.setText(I18n.translate("mode.select.votes", estimateVotes(mode.get())));
+        }
     }
 }
