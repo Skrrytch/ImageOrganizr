@@ -36,3 +36,13 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### IntelliJ (whole folder, personal settings) ###
+.idea/
+
+### Maven ###
+dependency-reduced-pom.xml
+nbactions.xml
+
+### Packages ###
+dist/

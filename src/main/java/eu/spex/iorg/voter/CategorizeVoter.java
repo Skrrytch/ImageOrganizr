@@ -1,6 +1,7 @@
 package eu.spex.iorg.voter;
 
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -113,7 +114,9 @@ public class CategorizeVoter extends Voter {
             rename.setNewDirectory(voteValue);
             return rename;
         } else {
-            return createFileRename(voteRecord, voteValue + "-" + voteRecord.getFileName());
+            // two digits, so a file manager sorts "10-..." behind "09-..."
+            return createFileRename(voteRecord,
+                    MessageFormat.format("{0,number,00}-{1}", Integer.parseInt(voteValue), voteRecord.getFileName()));
         }
     }
 

@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest an idea or an improvement
+labels: [ enhancement ]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe your use case - how do you organize your photos today, and where does iorg get in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How could iorg support this?

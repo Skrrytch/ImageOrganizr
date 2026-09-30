@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and general feedback
+    url: https://github.com/Skrrytch/ImageOrganizr/discussions
+    about: Tell us how you use iorg, ask questions or share ideas.

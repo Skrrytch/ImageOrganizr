@@ -3,30 +3,43 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>eu.spex</groupId>
     <artifactId>ImageOrganizr</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>ImageOrganizr</name>
 
+    <description>Organize your photos by comparing, rating and categorizing them - then rename or sort them into folders.</description>
+    <url>https://github.com/Skrrytch/ImageOrganizr</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
+
     <properties>
-        <maven.compiler.target>21</maven.compiler.target>
-        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <javafx.version>21.0.5</javafx.version>
+        <junit.version>5.11.3</junit.version>
+        <mainClass>eu.spex.iorg.ImageOrganizr</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-base</artifactId>
-            <version>17.0.6</version>
+            <version>${javafx.version}</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>17.0.6</version>
+            <version>${javafx.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.controlsfx</groupId>
-            <artifactId>controlsfx</artifactId>
-            <version>11.1.2</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -34,10 +47,11 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
-                <configuration>
-                    <release>21</release>
-                </configuration>
+                <version>3.13.0</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
             </plugin>
             <plugin>
                 <groupId>org.openjfx</groupId>
@@ -48,9 +62,12 @@
                         <id>default-cli</id>
                         <configuration>
                             <launcher>iorg</launcher>
-                            <mainClass>eu.spex.iorg.ImageOrganizr</mainClass>
-                            <jlinkImageName>imageorganizr-${project.version}</jlinkImageName>
-                            <jlinkZipName>imageorganizr-${project.version}</jlinkZipName>
+                            <stripDebug>true</stripDebug>
+                            <noHeaderFiles>true</noHeaderFiles>
+                            <noManPages>true</noManPages>
+                            <compress>2</compress>
+                            <mainClass>${mainClass}</mainClass>
+                            <jlinkImageName>iorg-image</jlinkImageName>
                         </configuration>
                     </execution>
                     <execution>
@@ -59,14 +76,14 @@
                             <options>
                                 <option>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</option>
                             </options>
-                            <mainClass>eu.spex.iorg.ImageOrganizr</mainClass>
+                            <mainClass>${mainClass}</mainClass>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -74,10 +91,20 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/*/module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>eu.spex.iorg.ImageOrganizr</mainClass>
+                                    <mainClass>eu.spex.iorg.Launcher</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

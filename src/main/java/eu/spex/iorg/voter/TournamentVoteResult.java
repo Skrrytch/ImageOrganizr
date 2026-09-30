@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.VoteResult;
+import eu.spex.iorg.service.I18n;
 import eu.spex.iorg.service.Logger;
 
 public class TournamentVoteResult implements VoteResult {
@@ -47,14 +48,13 @@ public class TournamentVoteResult implements VoteResult {
     }
 
     public FileVoteRecord getFirst() {
-        // Aktuelle Liste holen
         List<FileVoteRecord> currentVotingList = votingLists.get(votingListIdx);
         if (votingListElementIdx < currentVotingList.size()) {
             FileVoteRecord fileVoteRecord = currentVotingList.get(votingListElementIdx);
             Logger.info("Next element (1st) in list (list idx {0}, element idx {1})", votingListIdx, votingListElementIdx);
             votingListElementIdx++;
             return fileVoteRecord;
-        } else { // Nein, dann nochmal von vorne mit der ersten Liste, die noch mehr als ein Element hat
+        } else { // list done: continue with the next list (full knockout: the first list with more than one element)
             int newVotingListIdx = votingListIdx + 1;
             if (mode == Mode.FULL_KNOCKOUT) { // always begin with the first list that has more than one element!
                 newVotingListIdx = 0;
@@ -62,7 +62,7 @@ public class TournamentVoteResult implements VoteResult {
                     newVotingListIdx++;
                 }
             }
-            // Abbruchbedingung
+            // end of voting?
             boolean finished = mode == Mode.FULL_KNOCKOUT
                     ? newVotingListIdx >= votingLists.size()
                     : votingLists.get(newVotingListIdx).size() == 1;
@@ -87,7 +87,7 @@ public class TournamentVoteResult implements VoteResult {
             return fileVoteRecord;
         } else {
             Logger.info("No more elements in list. Using first one (again) for a vote.", votingListElementIdx);
-            return currentVotingList.get(0); // TODO: außer Konkurrenz?
+            return currentVotingList.get(0); // TODO: should this vote count "out of competition"?
         }
     }
 
@@ -103,8 +103,8 @@ public class TournamentVoteResult implements VoteResult {
     public String getStageDescription() {
         int finishedVotingCount = votingListIdx;
         return mode == Mode.FULL_KNOCKOUT
-                ? (finishedVotingCount) + " finished. Top " + (allRecords.size() - finishedVotingCount) + " still voting..."
-                : "Round " + (finishedVotingCount + 1);
+                ? I18n.translate("stage.fullKnockout", finishedVotingCount, allRecords.size() - finishedVotingCount)
+                : I18n.translate("stage.simpleKnockout", finishedVotingCount + 1);
     }
 
     public List<List<FileVoteRecord>> getListsOfRecords() {

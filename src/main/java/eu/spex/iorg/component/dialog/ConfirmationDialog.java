@@ -10,7 +10,7 @@ public class ConfirmationDialog extends Dialog<Boolean> {
 
     public ConfirmationDialog(String textKey, String yesButtonKey, String noButtonKey) {
 
-        setTitle("Bestätigung");
+        setTitle(I18n.translate("confirm.title"));
         setHeaderText(I18n.translate(textKey));
 
         ButtonType cancelButtonType = new ButtonType(I18n.translate(noButtonKey));
@@ -19,7 +19,6 @@ public class ConfirmationDialog extends Dialog<Boolean> {
         getDialogPane().getButtonTypes().addAll(cancelButtonType, confirmButtonType);
 
         setResultConverter(dialogButton -> {
-            // Hier können Sie die Aktion ausführen, die beim Bestätigen des Dialogs ausgeführt werden soll
             return dialogButton == confirmButtonType;
         });
     }

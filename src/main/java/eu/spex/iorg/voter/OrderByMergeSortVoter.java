@@ -1,7 +1,6 @@
 package eu.spex.iorg.voter;
 
 import java.io.File;
-import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,6 +9,7 @@ import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.Vote;
 import eu.spex.iorg.model.VoteResult;
+import eu.spex.iorg.service.I18n;
 import eu.spex.iorg.service.Logger;
 
 public class OrderByMergeSortVoter extends Voter {
@@ -25,11 +25,11 @@ public class OrderByMergeSortVoter extends Voter {
     @Override
     public boolean initCollection(List<File> files) {
         if (files.isEmpty()) {
-            Logger.warn("Im Verzeichnis wurden keine Bilder gefunden.");
+            Logger.warn("No images in directory found.");
             return false;
         }
         if (files.size() == 1) {
-            Logger.warn("Im Verzeichnis wurde nur ein Bild gefunden.");
+            Logger.warn("Only one image in directory found.");
             return false;
         }
 
@@ -87,8 +87,7 @@ public class OrderByMergeSortVoter extends Voter {
     }
 
     private String getStageDescription() {
-        final String message = "{0} compared";
-        return MessageFormat.format(message, voteResult.getCompareCount());
+        return I18n.translate("stage.order", voteResult.getCompareCount());
     }
 
     @Override

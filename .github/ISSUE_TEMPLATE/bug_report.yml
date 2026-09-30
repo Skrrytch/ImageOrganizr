@@ -1,0 +1,43 @@
+name: Bug report
+description: Something does not work as expected
+labels: [ bug ]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options: [ Start dialog / not mode related, Order, Categorize, Rate, Simple knockout, Full knockout ]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: iorg version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: package
+    attributes:
+      label: How do you run iorg?
+      options: [ Windows installer (.msi), Windows zip, Linux .deb, Linux tar.gz, Built from source ]
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11, Ubuntu 24.04, ..."
+  - type: textarea
+    id: log
+    attributes:
+      label: Console output
+      description: If you started iorg from a terminal, please paste its output.
+      render: text

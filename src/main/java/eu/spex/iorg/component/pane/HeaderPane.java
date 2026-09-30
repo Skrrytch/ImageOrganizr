@@ -24,8 +24,18 @@ public class HeaderPane extends GridPane {
         getColumnConstraints().add(columnConstraint);
 
         addModeTitle();
-        addDirectoryInfo(directory + " (" + size + " files)");
+        addDirectoryInfo(displayPath(directory) + " (" + size + " " + I18n.translate("files") + ")");
         addModeDescription();
+    }
+
+    /** The absolute path, with the home directory shortened to "~" where that is common (not on Windows). */
+    private static String displayPath(File directory) {
+        String path = directory.getAbsoluteFile().toPath().normalize().toString();
+        String home = System.getProperty("user.home");
+        if (File.separatorChar == '/' && home != null && (path.equals(home) || path.startsWith(home + "/"))) {
+            return "~" + path.substring(home.length());
+        }
+        return path;
     }
 
     private void addModeTitle() {

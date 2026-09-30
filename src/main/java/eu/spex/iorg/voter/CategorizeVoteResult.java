@@ -9,6 +9,7 @@ import java.util.TreeMap;
 import eu.spex.iorg.model.FileVoteRecord;
 import eu.spex.iorg.model.Mode;
 import eu.spex.iorg.model.VoteResult;
+import eu.spex.iorg.service.I18n;
 import eu.spex.iorg.service.Logger;
 
 public class CategorizeVoteResult implements VoteResult {
@@ -76,7 +77,7 @@ public class CategorizeVoteResult implements VoteResult {
     }
 
     public String getStageDescription() {
-        return "Categorizing " + votingElementIdx + " of " + allRecords.size();
+        return I18n.translate("stage.categorize", votingElementIdx, allRecords.size());
     }
 
     public void onVoted(FileVoteRecord record) {

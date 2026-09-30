@@ -54,7 +54,7 @@ public class TournamentVoter extends Voter {
     private Vote getNextVote() {
         FileVoteRecord firstRecord = voteResult.getFirst();
         if (firstRecord == null) {
-            return null; // fertig
+            return null; // finished
         }
         FileVoteRecord secondRecord = voteResult.getSecond();
         return new Vote(voteResult.getStageDescription(), firstRecord, secondRecord);
@@ -80,7 +80,7 @@ public class TournamentVoter extends Voter {
             List<FileVoteRecord> recordList = listsOfRecords.get(listIdx);
             for (FileVoteRecord record : recordList) {
                 record.setFinalResult(String.valueOf(orderNr), createPlacementRename(record, orderNr));
-                result.add(0, record); // add to the beginning for the correct order (best first)
+                result.add(record); // the lists are walked from the final round down, so the best comes first
             }
             orderNr += recordList.size();
             listIdx--;

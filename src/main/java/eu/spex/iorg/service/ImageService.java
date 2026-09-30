@@ -13,7 +13,7 @@ public class ImageService {
         if (thumbnailWidth>=width && thumbnailHeight>=height) {
             return originalImage;
         }
-        // Erstelle ein leeres Canvas mit den gewünschten Thumbnail-Dimensionen
+        // empty canvas with the requested thumbnail size
         Canvas canvas = new Canvas(thumbnailWidth, thumbnailHeight);
         GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
         double ratio = Math.min(thumbnailWidth/width, thumbnailHeight/height);
@@ -21,10 +21,10 @@ public class ImageService {
         double targetHeight = height * ratio;
         double targetWidth = width * ratio;
 
-        // Zeichne das Originalbild auf das Canvas und skaliere es dabei auf die Thumbnail-Größe
+        // draw the original image scaled down to the thumbnail size
         graphicsContext.drawImage(originalImage, 0, 0, targetWidth, targetHeight);
 
-        // Extrahiere das verkleinerte Bild aus dem Canvas
+        // take the scaled image from the canvas
         return canvas.snapshot(null, null);
     }
 }

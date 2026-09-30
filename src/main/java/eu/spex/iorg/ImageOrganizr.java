@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -38,14 +39,17 @@ import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
@@ -53,6 +57,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -109,18 +114,22 @@ public class ImageOrganizr extends Application {
         initLocale();
 
         File directory = initDirectory();
-        if (directory == null) {
-            Logger.error("Failed to find directory");
-            return;
-        }
-        File[] files = getFilesFromDirectory(directory);
-        if (files == null) {
-            Logger.error("Failed to find files in " + directory.getAbsolutePath());
-            return;
+        File[] files = directory == null ? null : getFilesFromDirectory(directory);
+        while (files == null || files.length == 0) {
+            if (directory != null) {
+                showError(I18n.translate("error.noImages", directory.getAbsolutePath()));
+            }
+            directory = chooseDirectory(primaryStage, directory);
+            if (directory == null) {
+                Platform.exit();
+                return;
+            }
+            files = getFilesFromDirectory(directory);
         }
 
         mode = getSortMode(files);
         if (mode == null) {
+            Platform.exit();
             return;
         }
 
@@ -131,11 +140,14 @@ public class ImageOrganizr extends Application {
         };
         boolean success = voter.initCollection(Arrays.stream(files).collect(Collectors.toList()));
         if (!success) {
-            System.exit(1);
+            showError(I18n.translate("error.tooFewImages", directory.getAbsolutePath()));
+            Platform.exit();
+            return;
         }
         currentVote = voter.getStartVote();
 
         primaryStage.setTitle("iorg: " + I18n.translate("mode." + mode.getParameter()));
+        primaryStage.getIcons().add(new Image(ImageOrganizr.class.getResourceAsStream("/iorg.png")));
         // Information Pane
 
         this.headerPane = createHeaderPane(mode, directory);
@@ -163,7 +175,7 @@ public class ImageOrganizr extends Application {
         primaryStage.setMinHeight(Math.min(scene.getHeight(), 750));
 
         primaryStage.setOnCloseRequest(event -> {
-            event.consume(); // Verhindert das Standard-Schließen des Fensters
+            event.consume(); // keeps the window open until the user confirms
             ConfirmationDialog dialog = new ConfirmationDialog("quit.confirm.question", "quit.confirm.yes", "quit.confirm.no");
             if (dialog.confirm().orElse(false)) {
                 primaryStage.close();
@@ -375,7 +387,26 @@ public class ImageOrganizr extends Application {
         if (directory == null) {
             return null;
         }
-        return directory.listFiles((dir, name) -> SUPPORTED_EXTENSIONS.stream().anyMatch(name::endsWith));
+        return directory.listFiles((dir, name) -> {
+            String lowerName = name.toLowerCase(Locale.ROOT);
+            return SUPPORTED_EXTENSIONS.stream().anyMatch(lowerName::endsWith);
+        });
+    }
+
+    private static File chooseDirectory(Stage owner, File initialDirectory) {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle(I18n.translate("directory.choose.title"));
+        if (initialDirectory != null && initialDirectory.isDirectory()) {
+            chooser.setInitialDirectory(initialDirectory);
+        }
+        return chooser.showDialog(owner);
+    }
+
+    private static void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.setTitle("iorg");
+        alert.setHeaderText(null);
+        alert.showAndWait();
     }
 
     private void initLocale() {
@@ -386,6 +417,10 @@ public class ImageOrganizr extends Application {
         }
     }
 
+    /**
+     * The directory from the command line or, without an argument, the current directory. A double-clicked
+     * launcher usually starts in a directory without images - the caller then asks for a directory instead.
+     */
     private File initDirectory() {
         String directoryPath = Paths.get("").toAbsolutePath().toString();
         List<String> unnamedParams = getParameters().getUnnamed();
@@ -561,7 +596,7 @@ public class ImageOrganizr extends Application {
         } else if (mode == Mode.CATEGORIZE) {
             rightCategorizePane.clearRecord();
         }
-        footerPane.setStage("Beendet");
+        footerPane.setStage(I18n.translate("stage.finished"));
         rootPane.getChildren().clear();
     }
 

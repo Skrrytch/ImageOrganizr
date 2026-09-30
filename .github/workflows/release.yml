@@ -1,0 +1,71 @@
+name: Release
+
+# Push a tag like "v1.0.0" to build the Windows and Linux packages and create a *draft* release.
+# Review the draft on GitHub and publish it by hand.
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        # Ubuntu 22.04 keeps the .deb dependencies installable on older and newer distributions,
+        # windows-2022 still ships the WiX 3 toolset that jpackage (JDK 21) needs for the .msi.
+        os: [ ubuntu-22.04, windows-2022 ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Test
+        run: mvn -B verify
+      - name: Ensure WiX 3 is on the path
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            $wix = Get-ChildItem 'C:\Program Files (x86)' -Filter 'WiX Toolset v3*' -Directory | Select-Object -First 1
+            if (-not $wix) { choco install wixtoolset --version 3.14.1 -y; $wix = Get-ChildItem 'C:\Program Files (x86)' -Filter 'WiX Toolset v3*' -Directory | Select-Object -First 1 }
+            Add-Content $env:GITHUB_PATH (Join-Path $wix.FullName 'bin')
+          }
+      - name: Package
+        shell: bash
+        run: packaging/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.os }}
+          path: dist/*
+
+  release:
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            /^## \[/ { if (found) exit; if (index($0, "[" v "]")) { found=1; next } }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          cat release-notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: ImageOrganizr ${{ github.ref_name }}
+          body_path: release-notes.md
+          files: dist/*
