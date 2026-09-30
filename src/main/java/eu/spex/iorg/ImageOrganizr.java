@@ -113,17 +113,26 @@ public class ImageOrganizr extends Application {
     public void start(Stage primaryStage) throws FileNotFoundException {
         initLocale();
 
-        File directory = initDirectory();
+        List<String> unnamedParams = getParameters().getUnnamed();
+        String directoryArgument = unnamedParams.isEmpty() ? null : unnamedParams.get(0);
+        File directory = initDirectory(directoryArgument);
         File[] files = directory == null ? null : getFilesFromDirectory(directory);
+        // Started without a directory, e.g. from the Start menu: the current directory is usually not the one with
+        // the images, so ask for one right away instead of complaining. An explicit directory gets an error message.
+        boolean explicitDirectory = directoryArgument != null;
         while (files == null || files.length == 0) {
-            if (directory != null) {
-                showError(I18n.translate("error.noImages", directory.getAbsolutePath()));
+            if (explicitDirectory) {
+                showError(directory == null
+                        ? I18n.translate("error.noDirectory", directoryArgument)
+                        : I18n.translate("error.noImages", directory.getAbsolutePath()));
             }
-            directory = chooseDirectory(primaryStage, directory);
+            directory = chooseDirectory(primaryStage, explicitDirectory ? directory : defaultPictureDirectory());
             if (directory == null) {
                 Platform.exit();
                 return;
             }
+            explicitDirectory = true;
+            directoryArgument = directory.getAbsolutePath();
             files = getFilesFromDirectory(directory);
         }
 
@@ -418,16 +427,16 @@ public class ImageOrganizr extends Application {
     }
 
     /**
-     * The directory from the command line or, without an argument, the current directory. A double-clicked
-     * launcher usually starts in a directory without images - the caller then asks for a directory instead.
+     * The directory from the command line or, without an argument, the current directory.
+     *
+     * @return the directory or {@code null} if the argument is not a directory
      */
-    private File initDirectory() {
-        String directoryPath = Paths.get("").toAbsolutePath().toString();
-        List<String> unnamedParams = getParameters().getUnnamed();
-        if (unnamedParams.size() >= 1) {
-            directoryPath = unnamedParams.get(0);
+    private static File initDirectory(String directoryArgument) {
+        String directoryPath = directoryArgument;
+        if (directoryPath != null) {
             Logger.info("Using directory from argument: " + directoryPath);
         } else {
+            directoryPath = Paths.get("").toAbsolutePath().toString();
             Logger.info("Using current directory: " + directoryPath);
         }
 
@@ -437,6 +446,13 @@ public class ImageOrganizr extends Application {
             return null;
         }
         return directory;
+    }
+
+    /** Where the folder dialog starts when no directory was given: the user's pictures folder, if there is one. */
+    private static File defaultPictureDirectory() {
+        File home = new File(System.getProperty("user.home"));
+        File pictures = new File(home, "Pictures");
+        return pictures.isDirectory() ? pictures : home;
     }
 
     private HeaderPane createHeaderPane(Mode mode, File directory) {
